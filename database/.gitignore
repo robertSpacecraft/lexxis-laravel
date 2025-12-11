@@ -1,0 +1,23 @@
+# Laravel
+/vendor/
+/node_modules/
+/.env
+
+# PhpStorm
+/.idea/
+
+# Storage
+/storage/*
+!/storage/app/public
+
+# Laravel cache
+/bootstrap/cache/*
+
+# SQLite databases (if used for testing)
+*.sqlite*
+
+# Docker overrides
+/docker-compose.override.yml
+
+# Public storage symlink
+/public/storage
