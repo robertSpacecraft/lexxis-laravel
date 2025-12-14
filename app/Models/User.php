@@ -71,4 +71,13 @@ class User extends Authenticatable
     public function addresses(){
         return $this->hasMany(Address::class);
     }
+
+    //para comprobar el rol del usuario
+    public function isAdmin(): bool {
+        return $this->role === \App\Enums\UserRole::ADMIN;
+    }
+
+    public function isCustomer(): bool {
+        return $this->role === \App\Enums\UserRole::CUSTOMER;
+    }
 }

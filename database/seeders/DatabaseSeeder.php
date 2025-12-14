@@ -15,7 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        //Para poder crear datos fake en la BD respecto a AddressStructureSeeder.php
-        $this->call(AddressStructureSeeder::class);
+        $this->call([
+            AddressStructureSeeder::class,
+            AdminUserSeeder::class,
+        ]);
     }
 }
