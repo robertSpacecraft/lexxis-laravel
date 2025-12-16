@@ -68,6 +68,18 @@
                 </button>
             </div>
         </form>
+        <div class="flex justify-end">
+            <form method="POST"
+                  action="{{ route('admin.products.destroy', $product) }}"
+                  onsubmit="return confirm('¿Seguro que quieres eliminar este producto?')">
+                @csrf
+                @method('DELETE')
+
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md">
+                    Eliminar producto
+                </button>
+            </form>
+        </div>
     </div>
 @endsection
 

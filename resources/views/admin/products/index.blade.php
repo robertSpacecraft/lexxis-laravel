@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-semibold text-gray-900">Productos</h1>
 
         <a href="{{ route('admin.products.create') }}"
-           class="px-4 py-2 bg-gray-900 text-white rounded-md">
+           class="px-4 py-2 bg-blue-700 text-white hover:bg-red-500 rounded-md">
             Nuevo producto
         </a>
     </div>
@@ -24,17 +24,13 @@
                 <th class="text-left px-4 py-3">Slug</th>
                 <th class="text-left px-4 py-3">Activo</th>
                 <th class="text-left px-4 py-3">Creado</th>
+                <th class="text-left px-4 py-3">Acciones</th>
             </tr>
             </thead>
             <tbody class="divide-y">
             @forelse($products as $product)
                 <tr>
-                    <td class="px-4 py-3 font-medium">
-                        <a class="text-gray-900 underline hover:no-underline"
-                           href="{{ route('admin.products.edit', $product) }}">
-                            {{ $product->name }}
-                        </a>
-                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ $product->name }}</td>
                     <td class="px-4 py-3 text-gray-600">{{ $product->slug }}</td>
                     <td class="px-4 py-3">
                         @if($product->is_active)
@@ -44,6 +40,21 @@
                         @endif
                     </td>
                     <td class="px-4 py-3 text-gray-600">{{ $product->created_at?->format('Y-m-d H:i') }}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-4 text-sm">
+                            <a href="{{ route('admin.products.edit', $product) }}"
+                               class="underline text-gray-700 hover:text-gray-900">
+                                Editar producto
+                            </a>
+
+                            <a href="{{ route('admin.products.variants.index', $product) }}"
+                               class="underline text-gray-700 hover:text-gray-900">
+                                Ver variantes ({{ $product->variants_count }})
+                            </a>
+                        </div>
+                    </td>
+
+
                 </tr>
             @empty
                 <tr>

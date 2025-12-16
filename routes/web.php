@@ -27,9 +27,27 @@ Route::middleware(['auth', 'admin'])
             return view('admin.dashboard');
         })->name('dashboard');
 
+        //CRUD de Products
         Route::resource('products', ProductController::class)
-            ->only(['index', 'create', 'store', 'edit', 'update']);
-    });
+            ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
+        //CRUD de ProductsVariants
+        Route::get('/products/{product}/variants', [ProductController::class, 'variants'])->name('products.variants.index');
+        Route::get('/products/{product}/variants/create', [ProductController::class, 'variantsCreate'])
+            ->name('products.variants.create');
+        Route::post('/products/{product}/variants', [ProductController::class, 'variantsStore'])
+            ->name('products.variants.store');
+        Route::get('/products/{product}/variants/{variant}/edit', [ProductController::class, 'variantsEdit'])
+            ->name('products.variants.edit');
+        Route::put('/products/{product}/variants/{variant}', [ProductController::class, 'variantsUpdate'])
+            ->name('products.variants.update');
+        Route::delete('/products/{product}/variants/{variant}', [ProductController::class, 'variantsDestroy'])
+            ->name('products.variants.destroy');
+
+
+
+
+
+    });
 
 require __DIR__.'/auth.php';
