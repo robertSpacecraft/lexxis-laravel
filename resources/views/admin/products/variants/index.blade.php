@@ -10,9 +10,9 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <a href="{{ route('admin.products.edit', $product) }}"
+            <a href="{{ route('admin.products.index', $product) }}"
                class="text-sm text-gray-600 hover:text-gray-900 underline">
-                Volver al producto
+                Volver al productos
             </a>
 
             <a href="{{ route('admin.products.variants.create', $product) }}"

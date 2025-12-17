@@ -20,6 +20,7 @@
                 <nav class="hidden sm:flex items-center gap-3 text-sm text-gray-600">
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-gray-900">Dashboard</a>
                     <a href="{{ route('admin.products.index' )}}" class="hover:text-gray-900">Productos</a>
+                    <a href="{{ route('admin.materials.index') }}" class="hover:text-gray-900">Materiales</a>
                 </nav>
             </div>
 

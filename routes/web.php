@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductVariantController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -32,22 +34,21 @@ Route::middleware(['auth', 'admin'])
             ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
         //CRUD de ProductsVariants
-        Route::get('/products/{product}/variants', [ProductController::class, 'variants'])->name('products.variants.index');
-        Route::get('/products/{product}/variants/create', [ProductController::class, 'variantsCreate'])
+        Route::get('/products/{product}/variants', [ProductVariantController::class, 'variants'])->name('products.variants.index');
+        Route::get('/products/{product}/variants/create', [ProductVariantController::class, 'variantsCreate'])
             ->name('products.variants.create');
-        Route::post('/products/{product}/variants', [ProductController::class, 'variantsStore'])
+        Route::post('/products/{product}/variants', [ProductVariantController::class, 'variantsStore'])
             ->name('products.variants.store');
-        Route::get('/products/{product}/variants/{variant}/edit', [ProductController::class, 'variantsEdit'])
+        Route::get('/products/{product}/variants/{variant}/edit', [ProductVariantController::class, 'variantsEdit'])
             ->name('products.variants.edit');
-        Route::put('/products/{product}/variants/{variant}', [ProductController::class, 'variantsUpdate'])
+        Route::put('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsUpdate'])
             ->name('products.variants.update');
-        Route::delete('/products/{product}/variants/{variant}', [ProductController::class, 'variantsDestroy'])
+        Route::delete('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsDestroy'])
             ->name('products.variants.destroy');
 
-
-
-
-
+        //CRUD de Materials
+        Route::resource('materials', MaterialController::class)
+            ->only(['index', 'create', 'store', 'edit', 'update']);
     });
 
 require __DIR__.'/auth.php';
