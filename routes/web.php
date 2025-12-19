@@ -5,6 +5,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\productImageController;
+use App\Http\Controllers\Admin\ProductVariantImageController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -49,6 +52,27 @@ Route::middleware(['auth', 'admin'])
         //CRUD de Materials
         Route::resource('materials', MaterialController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
+
+        //CRUD de ProductImage
+        Route::get('/products/{product}/images', [ProductImageController::class, 'index'])->name('products.images.index');
+        Route::get('/products/{product}/images/create', [ProductImageController::class, 'create'])->name('products.images.create');
+        Route::post('/products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');
+        Route::get('/products/{product}/images/{image}/edit', [ProductImageController::class, 'edit'])->name('products.images.edit');
+        Route::put('products/{product}/images/{image}', [ProductImageController::class, 'update'])->name('products.images.update');
+        Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
+
+        //CRUD de ProductVariantImage
+        // CRUD de ProductVariantImages
+        Route::get('/products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'index'])
+            ->name('products.variants.images.index');
+        Route::get('/products/{product}/variants/{variant}/images/create', [ProductVariantImageController::class, 'create'])
+            ->name('products.variants.images.create');
+        Route::post('/products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'store'])
+            ->name('products.variants.images.store');
+        Route::delete('/products/{product}/variants/{variant}/images/{image}', [ProductVariantImageController::class, 'destroy'])
+            ->name('products.variants.images.destroy');
+
+
     });
 
 require __DIR__.'/auth.php';
