@@ -86,5 +86,36 @@
             </div>
         </form>
     </div>
+    <div class="flex items-center justify-between bg-gray-50 border rounded-lg p-4 mb-6">
+        <div class="flex items-center gap-4">
+            @if ($variant->mainImage)
+                <img
+                    src="{{ Storage::url($variant->mainImage->path) }}"
+                    alt="{{ $variant->mainImage->alt_text ?? '' }}"
+                    style="height:80px; width:80px; object-fit:contain; background:#f5f5f5; border-radius:8px;"
+                >
+            @else
+                <div style="height:80px; width:80px; border:1px solid #ddd; border-radius:8px; background:#fff;"></div>
+            @endif
+
+            <div>
+                <div class="text-sm text-gray-700 font-medium">Imágenes de variante</div>
+                <div class="text-xs text-gray-500">Gestiona y cambia la principal desde Imágenes</div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <a href="{{ route('admin.products.variants.images.index', [$product, $variant]) }}"
+               class="px-3 py-2 bg-white border rounded-md text-sm hover:bg-gray-100">
+                Gestionar imágenes
+            </a>
+
+            <a href="{{ route('admin.products.variants.images.create', [$product, $variant]) }}"
+               class="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">
+                Subir imagen
+            </a>
+        </div>
+    </div>
+
 @endsection
 

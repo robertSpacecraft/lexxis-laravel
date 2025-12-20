@@ -36,4 +36,7 @@ class Product extends Model
     public function images(){
         return $this->hasMany(ProductImage::class);
     }
+    public function mainImage(){
+        return $this->hasOne(ProductImage::class)->where('is_main', true);
+    }
 }

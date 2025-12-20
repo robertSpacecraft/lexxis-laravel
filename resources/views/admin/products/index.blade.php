@@ -30,6 +30,18 @@
             <tbody class="divide-y">
             @forelse($products as $product)
                 <tr>
+                    <td>
+                        @if ($product->mainImage)
+                        <img
+                            src="{{ Storage::url($product->mainImage->path) }}"
+                            alt="{{ $product->mainImage->alt_text ?? '' }}"
+                            style="height:150px; width:150px; object-fit:contain; border-radius:6px;"
+                        >
+                    @else
+                        <div style="height:40px; width:40px; border:1px solid #ddd; border-radius:6px;"></div>
+                    @endif
+                    </td>
+
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $product->name }}</td>
                     <td class="px-4 py-3 text-gray-600">{{ $product->slug }}</td>
                     <td class="px-4 py-3">

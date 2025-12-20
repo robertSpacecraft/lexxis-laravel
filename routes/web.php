@@ -61,7 +61,6 @@ Route::middleware(['auth', 'admin'])
         Route::put('products/{product}/images/{image}', [ProductImageController::class, 'update'])->name('products.images.update');
         Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
 
-        //CRUD de ProductVariantImage
         // CRUD de ProductVariantImages
         Route::get('/products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'index'])
             ->name('products.variants.images.index');
@@ -69,8 +68,13 @@ Route::middleware(['auth', 'admin'])
             ->name('products.variants.images.create');
         Route::post('/products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'store'])
             ->name('products.variants.images.store');
+        Route::get('/products/{product}/variants/{variant}/images/{image}/edit', [ProductVariantImageController::class, 'edit'])
+            ->name('products.variants.images.edit');
+        Route::put('/products/{product}/variants/{variant}/images/{image}', [ProductVariantImageController::class, 'update'])
+            ->name('products.variants.images.update');
         Route::delete('/products/{product}/variants/{variant}/images/{image}', [ProductVariantImageController::class, 'destroy'])
             ->name('products.variants.images.destroy');
+
 
 
     });

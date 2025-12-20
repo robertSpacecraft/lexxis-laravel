@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreProductImageRequest;
+use App\Http\Requests\UpdateProductImageRequest;
+use Illuminate\Support\Facades\Storage;
 
 class productImageController extends Controller
 {
@@ -20,24 +23,18 @@ class productImageController extends Controller
         return view('admin.products.images.create', compact('product'));
     }
 
-    public function store(Request $request, Product $product){
-        $validated = $request->validate([
-           'image' => ['required', 'image', 'mimes:jpeg,jpg,png', 'max:4096'],
-           'alt_text' => ['nullable', 'string', 'max:255'],
-           'is_main' => ['nullable', 'boolean'],
-        ]);
+    public function store(StoreProductImageRequest $request, Product $product)
+    {
+        $validated = $request->validated();
 
         $isMain = (bool) ($validated['is_main'] ?? false);
 
-        //Si se marca la checkbox como principal se desmarca del resto
-        if ($isMain){
-           $product->images()->update(['is_main' => false]);
+        if ($isMain) {
+            $product->images()->update(['is_main' => false]);
         }
 
-        //Calculo el sort_order
         $nextOrder = ($product->images()->max('sort_order') ?? 0) + 1;
 
-        //Guardo el archivo
         $path = $request->file('image')->store('products/' . $product->id, 'public');
 
         $product->images()->create([
@@ -46,21 +43,67 @@ class productImageController extends Controller
             'is_main' => $isMain,
             'sort_order' => $nextOrder,
         ]);
+
         return redirect()
             ->route('admin.products.images.index', $product)
             ->with('status', 'Imagen subida correctamente');
     }
 
-    public function edit(){
+    public function edit(Product $product, ProductImage $image){
+        abort_unless($image->product_id === $product->id, 404);
+        return view('admin.products.images.edit', compact('product', 'image'));
 
     }
 
-    public function update(){
-        //
+    public function update(UpdateProductImageRequest $request, Product $product, ProductImage $image)
+    {
+        abort_unless($image->product_id === $product->id, 404);
+
+        $validated = $request->validated();
+
+        //Reemplazo de archivo
+        if ($request->hasFile('image')) {
+            if ($image->path && Storage::disk('public')->exists($image->path)) {
+                Storage::disk('public')->delete($image->path);
+            }
+
+            $image->path = $request->file('image')
+                ->store('products/' . $product->id, 'public');
+        }
+
+        //Texto alternativo
+        $image->alt_text = $validated['alt_text'] ?? null;
+
+        // 3) Imagen principal (solo si se marca)
+        $isMain = (bool) ($validated['is_main'] ?? false);
+        if ($isMain) {
+            $product->images()->whereKeyNot($image->id)->update(['is_main' => false]);
+            $image->is_main = true;
+        }
+
+        $image->save();
+
+        return redirect()
+            ->route('admin.products.images.index', $product)
+            ->with('status', 'Imagen actualizada correctamente');
     }
 
-    public function destroy(){
-        //
+
+    public function destroy(Product $product, ProductImage $image)
+    {
+        abort_unless($image->product_id === $product->id, 404);
+
+        // Borrado físico del archivo
+        if ($image->path && Storage::disk('public')->exists($image->path)) {
+            Storage::disk('public')->delete($image->path);
+        }
+
+        $image->delete();
+
+        return redirect()
+            ->route('admin.products.images.index', $product)
+            ->with('status', 'Imagen eliminada correctamente');
     }
+
 
 }

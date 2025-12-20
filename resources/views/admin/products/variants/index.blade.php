@@ -27,6 +27,7 @@
         <table class="min-w-full text-sm">
             <thead class="bg-gray-50 text-gray-700">
             <tr>
+                <th class="text-left px-4 py-3">Imagen</th>
                 <th class="text-left px-4 py-3">SKU</th>
                 <th class="text-left px-4 py-3">Material</th>
                 <th class="text-left px-4 py-3">Color</th>
@@ -40,6 +41,21 @@
             <tbody class="divide-y">
             @forelse($variants as $variant)
                 <tr>
+                    <td class="px-4 py-2">
+                        @php
+                            $img = $variant->mainImage ?? $product->mainImage;
+                        @endphp
+
+                        @if ($img)
+                            <img
+                                src="{{ Storage::url($img->path) }}"
+                                alt="{{ $img->alt_text ?? '' }}"
+                                style="height:150px; width:150px; object-fit:contain; background:#f5f5f5; border-radius:6px;"
+                            >
+                        @else
+                            <div style="height:60px; width:60px; border:1px solid #ddd; border-radius:6px; background:#fff;"></div>
+                        @endif
+                    </td>
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $variant->sku }}</td>
                     <td class="px-4 py-3 text-gray-600">
                         {{ $variant->material->name ?? '—' }}

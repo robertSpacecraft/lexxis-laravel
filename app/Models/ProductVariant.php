@@ -40,5 +40,12 @@ class ProductVariant extends Model
     {
         return $this->hasMany(ProductVariantImage::class);
     }
+    public function mainImage()
+    {
+        return $this->hasOne(ProductVariantImage::class)
+            ->orderByDesc('is_main')
+            ->orderBy('sort_order');
+    }
+
 
 }

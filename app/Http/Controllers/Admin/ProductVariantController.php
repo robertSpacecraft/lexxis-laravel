@@ -14,8 +14,10 @@ use App\Http\Requests\UpdateProductVariantRequest;
 class ProductVariantController extends Controller
 {
     public function variants(Product $product){
+        $product->load('mainImage');
+
         $variants = $product->variants()
-            ->with('material')
+            ->with(['material', 'mainImage'])
             ->latest()
             ->get();
 
@@ -60,6 +62,7 @@ class ProductVariantController extends Controller
 
     public function variantsEdit(Product $product, ProductVariant $variant)
     {
+        $variant->load('mainImage');
         $materials = Material::query()
             ->where('is_active', true)
             ->orderBy('name')

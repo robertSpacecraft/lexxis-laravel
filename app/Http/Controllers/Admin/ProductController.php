@@ -16,6 +16,7 @@ class ProductController extends Controller
     //vista de productos
     public function index(){
         $products = Product::query()
+            ->with(['mainImage'])
             ->withCount('variants')
             ->latest()
             ->get();
@@ -45,6 +46,7 @@ class ProductController extends Controller
     }
 
     public function edit(Product $product){
+        $product->load('mainImage');
         return view('admin.products.edit', compact('product'));
     }
 
