@@ -35,6 +35,18 @@ class ProductVariantController extends Controller
         return view('admin.products.variants.create', compact('product', 'materials'));
     }
 
+    public function variantsShow(Product $product, ProductVariant $variant){
+        abort_unless($variant->product_id === $product->id,404);
+
+        $variant->load([
+            'material',
+            'images'=>function($query){
+            $query->orderBy('sort_order');
+            },
+        ]);
+        return view('admin.products.variants.show', compact('product', 'variant'));
+    }
+
     //Guarda la variante en la BD
     public function variantsStore(StoreProductVariantRequest $request, Product $product)
     {

@@ -56,7 +56,13 @@
                             <div style="height:60px; width:60px; border:1px solid #ddd; border-radius:6px; background:#fff;"></div>
                         @endif
                     </td>
-                    <td class="px-4 py-3 font-medium text-gray-900">{{ $variant->sku }}</td>
+                    <td class="px-4 py-3 font-medium">
+                        <a href="{{ route('admin.products.variants.show', [$product, $variant]) }}"
+                           class="text-gray-900 underline hover:text-gray-700">
+                            {{ $variant->sku }}
+                        </a>
+                    </td>
+
                     <td class="px-4 py-3 text-gray-600">
                         {{ $variant->material->name ?? '—' }}
                     </td>

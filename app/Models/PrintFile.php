@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Enums\PrintFileStatus;
 
 class PrintFile extends Model
 {
@@ -25,6 +26,7 @@ class PrintFile extends Model
     protected $casts = [
         'file_size' => 'integer',
         'metadata'  => 'array',
+        'status' => PrintFileStatus::class,
     ];
 
     public function user()

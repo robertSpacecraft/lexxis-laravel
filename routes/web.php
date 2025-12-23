@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\productImageController;
 use App\Http\Controllers\Admin\ProductVariantImageController;
+use App\Http\Controllers\Admin\PrintFileController;
 
 
 Route::get('/', function () {
@@ -74,6 +75,28 @@ Route::middleware(['auth', 'admin'])
             ->name('products.variants.images.update');
         Route::delete('/products/{product}/variants/{variant}/images/{image}', [ProductVariantImageController::class, 'destroy'])
             ->name('products.variants.images.destroy');
+        Route::get('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsShow'])
+            ->name('products.variants.show');
+
+        // CRUD de PrintFiles
+// CRUD de PrintFile
+        Route::get('/print-files', [PrintFileController::class, 'index'])
+            ->name('print-files.index');
+        Route::get('/print-files/create', [PrintFileController::class, 'create'])
+            ->name('print-files.create');
+        Route::post('/print-files', [PrintFileController::class, 'store'])
+            ->name('print-files.store');
+        Route::get('/print-files/{printFile}/download', [PrintFileController::class, 'download'])
+            ->name('print-files.download');
+        Route::get('/print-files/{printFile}', [PrintFileController::class, 'show'])
+            ->name('print-files.show');
+        Route::get('/print-files/{printFile}/edit', [PrintFileController::class, 'edit'])
+            ->name('print-files.edit');
+        Route::put('/print-files/{printFile}', [PrintFileController::class, 'update'])
+            ->name('print-files.update');
+        Route::delete('/print-files/{printFile}', [PrintFileController::class, 'destroy'])
+            ->name('print-files.destroy');
+
 
 
 

@@ -21,6 +21,7 @@
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-gray-900">Dashboard</a>
                     <a href="{{ route('admin.products.index' )}}" class="hover:text-gray-900">Productos</a>
                     <a href="{{ route('admin.materials.index') }}" class="hover:text-gray-900">Materiales</a>
+                    <a href="{{ route('admin.print-files.index') }}" class="hover:text-gray-900">Archivos imprimibles</a>
                 </nav>
             </div>
 
