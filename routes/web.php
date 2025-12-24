@@ -3,12 +3,13 @@
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\productImageController;
 use App\Http\Controllers\Admin\ProductVariantImageController;
 use App\Http\Controllers\Admin\PrintFileController;
-
+use App\Http\Controllers\Admin\PrintJobController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -97,8 +98,25 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/print-files/{printFile}', [PrintFileController::class, 'destroy'])
             ->name('print-files.destroy');
 
+        // CRUD de PrintJobs (anidado bajo PrintFiles)
+        Route::get('/print-files/{printFile}/jobs', [PrintJobController::class, 'index'])
+            ->name('print-files.jobs.index');
+        Route::get('/print-files/{printFile}/jobs/create', [PrintJobController::class, 'create'])
+            ->name('print-files.jobs.create');
+        Route::post('/print-files/{printFile}/jobs', [PrintJobController::class, 'store'])
+            ->name('print-files.jobs.store');
+        Route::get('/print-files/{printFile}/jobs/{printJob}', [PrintJobController::class, 'show'])
+            ->name('print-files.jobs.show');
+        Route::get('/print-files/{printFile}/jobs/{printJob}/edit', [PrintJobController::class, 'edit'])
+            ->name('print-files.jobs.edit');
+        Route::put('/print-files/{printFile}/jobs/{printJob}', [PrintJobController::class, 'update'])
+            ->name('print-files.jobs.update');
+        Route::delete('/print-files/{printFile}/jobs/{printJob}', [PrintJobController::class, 'destroy'])
+            ->name('print-files.jobs.destroy');
 
-
+        //CRUD de User
+        Route::resource('users', UserController::class)
+            ->only(['index', 'show', 'edit', 'update']);
 
     });
 

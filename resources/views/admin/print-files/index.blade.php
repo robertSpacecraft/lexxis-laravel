@@ -84,6 +84,11 @@
                                 Ver
                             </a>
 
+                            <a href="{{ route('admin.print-files.jobs.index', $file) }}"
+                               class="text-sm text-gray-700 underline">
+                                Jobs
+                            </a>
+
                             <a href="{{ route('admin.print-files.edit', $file) }}"
                                class="text-sm text-gray-700 underline">
                                 Editar
