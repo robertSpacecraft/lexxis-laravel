@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 
 class Order extends Model
 {
@@ -31,6 +33,8 @@ class Order extends Model
         'shipping_cost'  => 'decimal:2',
         'total'          => 'decimal:2',
         'placed_at'      => 'datetime',
+        'status'         => OrderStatus::class,
+        'payment_status' => PaymentStatus::class,
     ];
 
     public function user()

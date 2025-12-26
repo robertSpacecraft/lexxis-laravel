@@ -19,9 +19,22 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        $user->load(['addresses.street']);
+        $user->load([
+            'addresses.street',
+        ]);
 
-        return view('admin.users.show', compact('user'));
+        $recentOrders = \App\Models\Order::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $ordersCount = \App\Models\Order::query()
+            ->where('user_id', $user->id)
+            ->count();
+
+        return view('admin.users.show', compact('user', 'recentOrders', 'ordersCount'));
+
     }
 
     public function edit(User $user){

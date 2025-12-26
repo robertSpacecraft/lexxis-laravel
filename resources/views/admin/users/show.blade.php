@@ -85,6 +85,12 @@
             <div class="bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 flex items-center justify-between">
                 <span>Direcciones</span>
                 {{-- En la siguiente fase irá aquí "Añadir dirección" --}}
+
+                <a href="{{ route('admin.users.addresses.index', $user) }}"
+                   class="text-sm text-gray-600 hover:text-gray-900 underline">
+                    Ver direcciones
+                </a>
+
             </div>
 
             <div class="p-4">
@@ -146,7 +152,60 @@
                 @endif
             </div>
         </div>
+        <div class="border rounded">
+            <div class="bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 flex items-center justify-between">
+                <span>Pedidos</span>
 
+                <a href="{{ route('admin.users.orders.index', $user) }}"
+                   class="text-sm text-gray-600 hover:text-gray-900 underline">
+                    Ver pedidos ({{ $ordersCount }})
+                </a>
+            </div>
+
+            <div class="p-4">
+                @if ($recentOrders->isEmpty())
+                    <p class="text-sm text-gray-600">
+                        Este usuario no tiene pedidos.
+                    </p>
+                @else
+                    <table class="min-w-full text-sm border">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Nº pedido</th>
+                            <th class="px-4 py-2 text-left">Estado</th>
+                            <th class="px-4 py-2 text-left">Pago</th>
+                            <th class="px-4 py-2 text-right">Total</th>
+                            <th class="px-4 py-2 text-left">Fecha</th>
+                            <th class="px-4 py-2 text-right">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach ($recentOrders as $order)
+                            <tr class="border-t">
+                                <td class="px-4 py-2">{{ $order->order_number }}</td>
+                                <td class="px-4 py-2">{{ $order->status->value }}</td>
+                                <td class="px-4 py-2">{{ $order->payment_status->value }}</td>
+                                <td class="px-4 py-2 text-right">{{ number_format((float) $order->total, 2) }} €</td>
+                                <td class="px-4 py-2">
+                                    {{ $order->placed_at ? $order->placed_at->format('Y-m-d H:i') : '—' }}
+                                </td>
+                                <td class="px-4 py-2 text-right">
+                                    <a class="underline text-gray-700 hover:text-gray-900"
+                                       href="{{ route('admin.orders.show', $order) }}">
+                                        Ver
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+
+                    <p class="text-xs text-gray-500 mt-3">
+                        Mostrando los últimos {{ $recentOrders->count() }} pedidos.
+                    </p>
+                @endif
+            </div>
+        </div>
 
     </div>
 @endsection

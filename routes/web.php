@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\productImageController;
 use App\Http\Controllers\Admin\ProductVariantImageController;
 use App\Http\Controllers\Admin\PrintFileController;
 use App\Http\Controllers\Admin\PrintJobController;
+use App\Http\Controllers\Admin\AddressController;
+use App\Http\Controllers\Admin\OrderController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -117,6 +119,39 @@ Route::middleware(['auth', 'admin'])
         //CRUD de User
         Route::resource('users', UserController::class)
             ->only(['index', 'show', 'edit', 'update']);
+
+        // CRUD de Addresses (anidado bajo Users)
+        Route::get('/users/{user}/addresses', [AddressController::class, 'index'])
+            ->name('users.addresses.index');
+        Route::get('/users/{user}/addresses/{address}', [AddressController::class, 'show'])
+            ->name('users.addresses.show');
+        Route::get('/users/{user}/addresses/{address}/edit', [AddressController::class, 'edit'])
+            ->name('users.addresses.edit');
+        Route::put('/users/{user}/addresses/{address}', [AddressController::class, 'update'])
+            ->name('users.addresses.update');
+        Route::delete('/users/{user}/addresses/{address}', [AddressController::class, 'destroy'])
+            ->name('users.addresses.destroy');
+
+        //CRUD de Order
+            //Solo lectura para el acceso desde el panel
+        Route::get('/orders', [OrderController::class, 'globalIndex'])
+            ->name('orders.index');
+        Route::get('/orders/{order}', [OrderController::class, 'globalShow'])
+            ->name('orders.show');
+        Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])
+            ->name('orders.edit');
+        Route::put('/orders/{order}', [OrderController::class, 'update'])
+            ->name('orders.update');
+
+            //Resto de rutas anidadas a User
+        Route::get('/users/{user}/orders', [OrderController::class, 'userIndex'])
+            ->name('users.orders.index');
+        Route::get('/users/{user}/orders/{order}', [OrderController::class, 'userShow'])
+            ->name('users.orders.show');
+
+
+
+
 
     });
 
