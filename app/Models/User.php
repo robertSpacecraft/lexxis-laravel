@@ -80,4 +80,15 @@ class User extends Authenticatable
     public function isCustomer(): bool {
         return $this->role === \App\Enums\UserRole::CUSTOMER;
     }
+    public function cart()
+    {
+        return $this->hasOne(\App\Models\Cart::class);
+    }
+
+    public function carts()
+    {
+        return $this->hasMany(\App\Models\Cart::class);
+    }
+
+
 }

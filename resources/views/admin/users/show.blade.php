@@ -156,11 +156,19 @@
             <div class="bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 flex items-center justify-between">
                 <span>Pedidos</span>
 
-                <a href="{{ route('admin.users.orders.index', $user) }}"
-                   class="text-sm text-gray-600 hover:text-gray-900 underline">
-                    Ver pedidos ({{ $ordersCount }})
-                </a>
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('admin.users.cart.show', $user) }}"
+                       class="text-sm text-gray-600 hover:text-gray-900 underline">
+                        Ver carrito
+                    </a>
+
+                    <a href="{{ route('admin.users.orders.index', $user) }}"
+                       class="text-sm text-gray-600 hover:text-gray-900 underline">
+                        Ver pedidos ({{ $ordersCount }})
+                    </a>
+                </div>
             </div>
+
 
             <div class="p-4">
                 @if ($recentOrders->isEmpty())

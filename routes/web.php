@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PrintFileController;
 use App\Http\Controllers\Admin\PrintJobController;
 use App\Http\Controllers\Admin\AddressController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\UserCartController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -36,11 +37,11 @@ Route::middleware(['auth', 'admin'])
             return view('admin.dashboard');
         })->name('dashboard');
 
-        //CRUD de Products
+        //CRUD de Product
         Route::resource('products', ProductController::class)
             ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
-        //CRUD de ProductsVariants
+        //CRUD de ProductsVariant
         Route::get('/products/{product}/variants', [ProductVariantController::class, 'variants'])->name('products.variants.index');
         Route::get('/products/{product}/variants/create', [ProductVariantController::class, 'variantsCreate'])
             ->name('products.variants.create');
@@ -53,7 +54,7 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsDestroy'])
             ->name('products.variants.destroy');
 
-        //CRUD de Materials
+        //CRUD de Material
         Route::resource('materials', MaterialController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
 
@@ -65,7 +66,7 @@ Route::middleware(['auth', 'admin'])
         Route::put('products/{product}/images/{image}', [ProductImageController::class, 'update'])->name('products.images.update');
         Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
 
-        // CRUD de ProductVariantImages
+        // CRUD de ProductVariantImage
         Route::get('/products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'index'])
             ->name('products.variants.images.index');
         Route::get('/products/{product}/variants/{variant}/images/create', [ProductVariantImageController::class, 'create'])
@@ -81,7 +82,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsShow'])
             ->name('products.variants.show');
 
-        // CRUD de PrintFiles
+        // CRUD de PrintFile
 // CRUD de PrintFile
         Route::get('/print-files', [PrintFileController::class, 'index'])
             ->name('print-files.index');
@@ -132,6 +133,16 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/users/{user}/addresses/{address}', [AddressController::class, 'destroy'])
             ->name('users.addresses.destroy');
 
+        //CRUD de Cart
+        Route::get('/users/{user}/cart', [UserCartController::class, 'show'])
+            ->name('users.cart.show');
+        Route::post('/users/{user}/cart/items/product-variants/{variant}', [UserCartController::class, 'addProductVariant'])
+            ->name('users.cart.items.product-variants.store');
+        Route::post('/users/{user}/cart/items/print-jobs/{printJob}', [UserCartController::class, 'addPrintJob'])
+            ->name('users.cart.items.print-jobs.store');
+        Route::post('/users/{user}/cart/checkout', [UserCartController::class, 'checkout'])
+            ->name('users.cart.checkout');
+
         //CRUD de Order
             //Solo lectura para el acceso desde el panel
         Route::get('/orders', [OrderController::class, 'globalIndex'])
@@ -148,7 +159,6 @@ Route::middleware(['auth', 'admin'])
             ->name('users.orders.index');
         Route::get('/users/{user}/orders/{order}', [OrderController::class, 'userShow'])
             ->name('users.orders.show');
-
 
 
 

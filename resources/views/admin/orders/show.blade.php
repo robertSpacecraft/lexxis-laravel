@@ -28,8 +28,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="bg-white border rounded p-4 text-sm">
             <h2 class="font-medium text-gray-900 mb-3">Estado</h2>
-            <div>Pedido: <span class="text-gray-900">{{ $order->status }}</span></div>
-            <div>Pago: <span class="text-gray-900">{{ $order->payment_status }}</span></div>
+            <div>Pedido: <span class="text-gray-900">{{ $order->status->value }}</span></div>
+            <div>Pago: <span class="text-gray-900">{{ $order->payment_status->value }}</span></div>
             <div>Método: <span class="text-gray-900">{{ $order->payment_method ?? '—' }}</span></div>
         </div>
 
@@ -93,19 +93,45 @@
             <thead class="bg-gray-50 text-gray-700">
             <tr>
                 <th class="text-left px-3 py-2">Concepto</th>
-                <th class="text-left px-3 py-2">Producto</th>
-                <th class="text-left px-3 py-2">PrintJob</th>
+                <th class="text-left px-3 py-2">Tipo</th>
+                <th class="text-left px-3 py-2">Referencia</th>
                 <th class="text-right px-3 py-2">Cantidad</th>
                 <th class="text-right px-3 py-2">Unit</th>
                 <th class="text-right px-3 py-2">Subtotal</th>
             </tr>
             </thead>
+
             <tbody class="divide-y">
             @forelse($order->items as $item)
                 <tr>
                     <td class="px-3 py-2">{{ $item->item_name }}</td>
-                    <td class="px-3 py-2">{{ $item->product_variant_id ?? '—' }}</td>
-                    <td class="px-3 py-2">{{ $item->print_job_id ?? '—' }}</td>
+
+                    <td class="px-3 py-2">
+                        @if($item->product_variant_id && !$item->print_job_id)
+                            Producto
+                        @elseif(!$item->product_variant_id && $item->print_job_id)
+                            Servicio impresión
+                        @else
+                            Inválido (XOR)
+                        @endif
+                    </td>
+
+                    <td class="px-3 py-2">
+                        @if($item->product_variant_id && !$item->print_job_id)
+                            <a class="underline text-gray-700 hover:text-gray-900"
+                               href="{{ route('admin.products.variants.show', [optional($item->productVariant)->product_id, $item->productVariant]) }}">
+                                Variant #{{ $item->product_variant_id }}
+                            </a>
+                        @elseif(!$item->product_variant_id && $item->print_job_id)
+                            <a class="underline text-gray-700 hover:text-gray-900"
+                               href="{{ route('admin.print-files.jobs.show', [optional($item->printJob)->print_file_id, $item->printJob]) }}">
+                                PrintJob #{{ $item->print_job_id }}
+                            </a>
+                        @else
+                            —
+                        @endif
+                    </td>
+
                     <td class="px-3 py-2 text-right">{{ $item->quantity }}</td>
                     <td class="px-3 py-2 text-right">{{ number_format((float) $item->unit_price, 2) }} €</td>
                     <td class="px-3 py-2 text-right">{{ number_format((float) $item->subtotal, 2) }} €</td>

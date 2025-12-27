@@ -42,11 +42,14 @@
                     <td class="px-4 py-3">
                         {{ $order->placed_at ? $order->placed_at->format('Y-m-d H:i') : '—' }}
                     </td>
+
                     <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-3">
                         <a class="underline text-gray-700 hover:text-gray-900"
                            href="{{ route('admin.users.orders.show', [$user, $order]) }}">
-                            Ver
+                            Ver pedido
                         </a>
+                        </div>
                     </td>
                 </tr>
             @empty
