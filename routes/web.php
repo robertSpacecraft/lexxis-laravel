@@ -83,7 +83,6 @@ Route::middleware(['auth', 'admin'])
             ->name('products.variants.show');
 
         // CRUD de PrintFile
-// CRUD de PrintFile
         Route::get('/print-files', [PrintFileController::class, 'index'])
             ->name('print-files.index');
         Route::get('/print-files/create', [PrintFileController::class, 'create'])

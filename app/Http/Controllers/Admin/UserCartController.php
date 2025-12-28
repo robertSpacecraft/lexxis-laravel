@@ -16,6 +16,7 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\PrintJobPricingService;
 
 class UserCartController extends Controller
 {
@@ -92,20 +93,16 @@ class UserCartController extends Controller
     // Para añadir un PrintJob al carrito
     public function addPrintJob(AddPrintJobToCartRequest $request, User $user, PrintJob $printJob)
     {
-        // Integridad: el PrintJob debe pertenecer a ese usuario.
+        //El PrintJob debe pertenecer a ese usuario.
         abort_unless($printJob->user_id === $user->id, 404);
 
-        // Si el job ya está en un estado “final/avanzado”, no debería volver al carrito.
+        //El estado actual (enum o string)
         $status = $printJob->status?->value ?? (string) $printJob->status;
-        abort_unless(in_array($status, ['draft', 'in_cart'], true), 422);
 
-        // Al entrar al carrito, reflejo el estado del PrintJob.
-        if ($status === 'draft') {
-            $printJob->status = 'in_cart';
-            $printJob->save();
-        }
+        //Solo se permiten estos estados para esta operación así lo protejo mejor
+        abort_unless(in_array($status, ['draft', 'priced', 'in_cart'], true), 422);
 
-        // Garantizo que existe un carrito activo.
+        //Me aseguro y garantizo que existe un carrito activo.
         $cart = Cart::query()->firstOrCreate(
             [
                 'user_id' => $user->id,
@@ -115,9 +112,44 @@ class UserCartController extends Controller
         );
 
         $quantityToAdd = $request->validatedQuantity();
-        $unitPrice = (string) $printJob->unit_price;
 
-        DB::transaction(function () use ($cart, $printJob, $quantityToAdd, $unitPrice) {
+        DB::transaction(function () use ($cart, $printJob, $quantityToAdd, &$status) {
+
+            //Bloqueo el PrintJob
+            $printJob->lockForUpdate();
+
+            /*
+             * Si está en draft, aquí calculo el precio,
+             * se persiste el snapshot y se pasa a priced.
+             */
+            if ($status === 'draft') {
+                $pricingService = app(PrintJobPricingService::class);
+
+                $quote = $pricingService->quote($printJob);
+
+                $printJob->update([
+                    'estimated_material_g' => $quote['estimated_material_g'],
+                    'estimated_time_min'   => $quote['estimated_time_min'],
+                    'unit_price'           => $quote['unit_price'],
+                    'pricing_breakdown'    => $quote['pricing_breakdown'],
+                    'status'               => 'priced',
+                ]);
+
+                $status = 'priced';
+            }
+
+            //priced/in_cart siempre debe tener precio
+            abort_unless(!is_null($printJob->unit_price), 422, 'El PrintJob no tiene unit_price.');
+
+            //Si entra al carrito por primera vez, reflejo el estado
+            if ($status === 'priced') {
+                $printJob->status = 'in_cart';
+                $printJob->save();
+            }
+
+            $unitPrice = (string) $printJob->unit_price;
+
+            //Busco si ya existe línea para este PrintJob
             $existing = CartItem::query()
                 ->where('cart_id', $cart->id)
                 ->where('print_job_id', $printJob->id)
@@ -154,6 +186,7 @@ class UserCartController extends Controller
             ->route('admin.users.cart.show', $user)
             ->with('success', 'PrintJob añadido al carrito.');
     }
+
 
     // Método para convertir un Cart en un Order
     public function checkout(CheckoutCartRequest $request, User $user)
@@ -253,7 +286,7 @@ class UserCartController extends Controller
                     $printJob = PrintJob::query()->whereKey($item->print_job_id)->lockForUpdate()->first();
                     if ($printJob) {
                         $status = $printJob->status?->value ?? (string) $printJob->status;
-                        if (in_array($status, ['draft', 'in_cart'], true)) {
+                        if (in_array($status, ['draft', 'priced', 'in_cart'], true)) {
                             $printJob->status = 'ordered';
                             $printJob->save();
                         }

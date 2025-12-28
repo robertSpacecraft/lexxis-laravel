@@ -42,10 +42,11 @@
 
         <dl class="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <div>
-                <dt class="text-gray-500">Estado</dt>
+                <dt class="text-gray-900">Estado</dt>
                 <dd class="mt-1">
                     <span class="inline-flex px-2 py-1 rounded text-xs
                         @if($printJob->status->value === 'draft') bg-gray-100 text-gray-700
+                        @elseif($printJob->status->value === 'priced') bg-gray-100 text-gray-700
                         @elseif($printJob->status->value === 'in_cart') bg-yellow-100 text-yellow-700
                         @elseif($printJob->status->value === 'ordered') bg-blue-100 text-blue-700
                         @elseif($printJob->status->value === 'printing') bg-purple-100 text-purple-700
@@ -60,52 +61,94 @@
             </div>
 
             <div>
-                <dt class="text-gray-500">Material</dt>
-                <dd class="mt-1 text-gray-900">
+                <dt class="text-gray-900">Material</dt>
+                <dd class="mt-1 text-gray-500">
                     {{ $printJob->material->name ?? '—' }}
                 </dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Tecnología</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->technology }}</dd>
+                <dt class="text-gray-900">Tecnología</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->technology }}</dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Color</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->color_name ?? '—' }}</dd>
+                <dt class="text-gray-900">Color</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->color_name ?? '—' }}</dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Cantidad</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->quantity }}</dd>
+                <dt class="text-gray-900">Cantidad</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->quantity }}</dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Precio unitario</dt>
-                <dd class="mt-1 text-gray-900">{{ number_format($printJob->unit_price, 2) }} €</dd>
+                <dt class="text-gray-900">Precio unitario</dt>
+                <dd class="mt-1 text-gray-500">
+                    @if(is_null($printJob->unit_price))
+                        <span class="text-gray-500">Pendiente de cálculo</span>
+                    @else
+                        {{ number_format((float) $printJob->unit_price, 2) }} €
+                    @endif
+                </dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Material estimado (g)</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->estimated_material_g ?? '—' }}</dd>
+                <dt class="text-gray-900">Material estimado (g)</dt>
+                <dd class="mt-1 text-gray-500">
+                    @if(is_null($printJob->estimated_material_g))
+                        <span class="text-gray-500">Pendiente de cálculo</span>
+                    @else
+                        {{ $printJob->estimated_material_g }}
+                    @endif
+                </dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Tiempo estimado (min)</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->estimated_time_min ?? '—' }}</dd>
+                <dt class="text-gray-900">Tiempo estimado (min)</dt>
+                <dd class="mt-1 text-gray-500">
+                    @if(is_null($printJob->estimated_time_min))
+                        <span class="text-gray-500">Pendiente de cálculo</span>
+                    @else
+                        {{ $printJob->estimated_time_min }}
+                    @endif
+                </dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Creado</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->created_at->format('d/m/Y H:i') }}</dd>
+                <dt class="text-gray-900">Creado</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->created_at->format('d/m/Y H:i') }}</dd>
             </div>
 
             <div>
-                <dt class="text-gray-500">Actualizado</dt>
-                <dd class="mt-1 text-gray-900">{{ $printJob->updated_at->format('d/m/Y H:i') }}</dd>
+                <dt class="text-gray-900">Actualizado</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->updated_at->format('d/m/Y H:i') }}</dd>
             </div>
         </dl>
+
+        {{-- Este botón (solo-Admin) simula disparar el pricing real del printJob, lo añade al carrito del
+         propietario y permite validar el flujo end-to-end sin frontend--}}
+
+        @if(
+    in_array($printJob->status->value, ['draft', 'priced'], true)
+    )
+            <div class="px-6 py-5 border-t bg-gray-50">
+                <form method="POST"
+                      action="{{ route('admin.users.cart.items.print-jobs.store', [$printJob->user_id, $printJob]) }}">
+                    @csrf
+
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-red-500">
+                        Añadir al carrito (calcular precio)
+                    </button>
+
+                    <p class="mt-2 text-xs text-gray-500">
+                        El precio se calculará automáticamente antes de añadir el trabajo al carrito.
+                    </p>
+                </form>
+            </div>
+        @endif
+
 
         <div class="px-6 py-5 border-t">
             <h3 class="text-sm font-semibold text-gray-700">Pricing breakdown</h3>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PrintJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePrintJobRequest;
 use App\Http\Requests\UpdatePrintJobRequest;
@@ -44,6 +45,8 @@ class PrintJobController extends Controller
 
         // El job pertenece al propietario del archivo (no editable desde el formulario)
         $data['user_id'] = $printFile->user_id;
+
+        $data['status'] = PrintJobStatus::Draft;
 
         $printJob = PrintJob::create($data);
 

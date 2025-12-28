@@ -31,13 +31,6 @@ class StorePrintJobRequest extends FormRequest
             'color_name' => ['nullable', 'string', 'max:80'],
             'quantity' => ['required', 'integer', 'min:1'],
 
-            'estimated_material_g' => ['nullable', 'numeric', 'min:0'],
-            'estimated_time_min' => ['nullable', 'integer', 'min:0'],
-
-            'unit_price' => ['required', 'numeric', 'min:0'],
-            'pricing_breakdown' => ['nullable', 'array'],
-
-            'status' => ['required', Rule::in(PrintJobStatus::values())],
         ];
     }
 }

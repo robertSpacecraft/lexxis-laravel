@@ -5,6 +5,7 @@ namespace App\Enums;
 enum PrintJobStatus: string
 {
     case Draft = 'draft';
+    case Priced = 'priced';
     case InCart = 'in_cart';
     case Ordered = 'ordered';
     case Printing = 'printing';

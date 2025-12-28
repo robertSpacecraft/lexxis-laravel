@@ -29,14 +29,6 @@ class UpdatePrintJobRequest extends FormRequest
             'technology' => ['sometimes', 'string', 'max:50'],
             'color_name' => ['nullable', 'string', 'max:80'],
             'quantity' => ['sometimes', 'integer', 'min:1'],
-
-            'estimated_material_g' => ['nullable', 'numeric', 'min:0'],
-            'estimated_time_min' => ['nullable', 'integer', 'min:0'],
-
-            'unit_price' => ['sometimes', 'numeric', 'min:0'],
-            'pricing_breakdown' => ['nullable', 'array'],
-
-            'status' => ['sometimes', Rule::in(PrintJobStatus::values())],
         ];
     }
 }

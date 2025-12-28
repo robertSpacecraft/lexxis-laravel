@@ -74,38 +74,6 @@
                 @enderror
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">
-                    Precio unitario (€)
-                </label>
-                <input type="number"
-                       step="0.01"
-                       name="unit_price"
-                       value="{{ old('unit_price', $printJob->unit_price) }}"
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                @error('unit_price')
-                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">
-                    Estado
-                </label>
-                <select name="status"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    @foreach(\App\Enums\PrintJobStatus::cases() as $status)
-                        <option value="{{ $status->value }}"
-                            @selected(old('status', $printJob->status->value) === $status->value)>
-                            {{ ucfirst(str_replace('_', ' ', $status->value)) }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('status')
-                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
             <div class="flex items-center gap-4">
                 <button type="submit"
                         class="px-4 py-2 bg-gray-900 text-green-600 text-sm rounded hover:bg-gray-700">
