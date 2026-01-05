@@ -41,8 +41,22 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        @yield('content')
+        @if (session('success'))
+            <div class="mb-4 rounded border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                {{ session('success') }}
+            </div>
+        @endif
+
+            @if (session('error'))
+                <div class="mb-4 rounded border border-red-300 text-red-600 bg-red-100 px-4 py-3 text-sm text-red-900">
+                    <strong>Error:</strong> {{ session('error') }}
+                </div>
+            @endif
+
+
+            @yield('content')
     </main>
+
 
 </div>
 </body>

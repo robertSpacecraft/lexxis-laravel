@@ -73,6 +73,14 @@ class PrintJobController extends Controller
     {
         abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
 
+        $status = $printJob->status?->value ?? (string) $printJob->status;
+
+        if ($status !== 'draft') {
+            return redirect()
+                ->route('admin.print-files.jobs.show', [$printFile, $printJob])
+                ->with('error', 'Este PrintJob no se puede editar en su estado actual.');
+        }
+
         $materials = Material::query()
             ->select('id', 'name')
             ->where('is_active', true)
@@ -87,9 +95,18 @@ class PrintJobController extends Controller
     {
         abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
 
+        $status = $printJob->status?->value ?? (string) $printJob->status;
+
+        if ($status !== 'draft') {
+            return redirect()
+                ->route('admin.print-files.jobs.show', [$printFile, $printJob])
+                ->with('error', 'Este PrintJob no se puede actualizar en su estado actual (ya está en el carrito).');
+        }
+
+
         $data = $request->validated();
 
-        // Blindaje: estos campos no se reasignan desde update
+        //Blindaje: estos campos no se reasignan desde update
         unset($data['print_file_id'], $data['user_id']);
 
         $printJob->update($data);

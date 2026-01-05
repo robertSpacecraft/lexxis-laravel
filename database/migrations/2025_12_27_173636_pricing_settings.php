@@ -14,21 +14,21 @@ return new class extends Migration
         Schema::create('pricing_settings', function (Blueprint $table) {
             $table->id();
 
-            // Identificación / versionado
-            $table->string('version');           // ej: "fdm-v1"
+            //Identificación / versionado
+            $table->string('version');
             $table->boolean('active')->default(false);
 
-            // Costes base
+            //Costes base
             $table->decimal('material_cost_per_kg', 10, 2);
             $table->decimal('machine_cost_per_min', 10, 4);
             $table->decimal('setup_fee_per_job', 10, 2)->default(0);
 
-            // Multiplicadores
+            //Multiplicadores
             $table->decimal('material_multiplier', 5, 2)->default(1.00);
             $table->decimal('time_multiplier', 5, 2)->default(1.00);
             $table->decimal('margin_multiplier', 5, 2)->default(1.00);
 
-            // Infill (5 / 15 / 40)
+            //Infill (5 / 15 / 40)
             $table->json('infill_multipliers');
 
             $table->timestamps();

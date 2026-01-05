@@ -232,6 +232,36 @@ class UserCartController extends Controller
 
             abort_if($items->isEmpty(), 422, 'El carrito está vacío.');
 
+            // Integridad previa: validar líneas del carrito antes de crear el pedido.
+            foreach ($items as $item) {
+                $isProduct = !is_null($item->product_variant_id);
+                $isPrint   = !is_null($item->print_job_id);
+
+                // XOR obligatorio
+                abort_unless($isProduct xor $isPrint, 500);
+
+                // Snapshot mínimo del carrito (BD lo fuerza, pero validamos igual)
+                abort_unless(!is_null($item->unit_price), 422, 'Hay una línea sin precio unitario.');
+                abort_unless(!is_null($item->subtotal), 422, 'Hay una línea sin subtotal.');
+
+                if ($isPrint) {
+                    $printJob = PrintJob::query()
+                        ->whereKey($item->print_job_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    abort_unless($printJob, 422, 'El PrintJob del carrito ya no existe.');
+                    abort_unless((int) $printJob->user_id === (int) $user->id, 404);
+
+                    $pjStatus = $printJob->status?->value ?? (string) $printJob->status;
+                    abort_unless(in_array($pjStatus, ['in_cart'], true), 422, 'El PrintJob no está listo para checkout.');
+
+                    // Coherencia adicional (recomendable)
+                    abort_unless(!is_null($printJob->unit_price), 422, 'El PrintJob no tiene unit_price calculado.');
+                }
+            }
+
+
             // Cálculos básicos (de momento sin IVA ni envío).
             $subtotal = (float) $items->sum(fn (CartItem $i) => (float) $i->subtotal);
             $tax = 0.00;
