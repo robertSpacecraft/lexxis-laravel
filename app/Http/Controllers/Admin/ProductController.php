@@ -12,12 +12,11 @@ use Illuminate\support\Str;
 
 class ProductController extends Controller
 {
-
     //vista de productos
     public function index(){
         $products = Product::query()
-            ->with(['mainImage'])
-            ->withCount('variants')
+            ->with(['mainImage']) //Carga de antemano la relación de la imagen principal (así solo hace dos consultas)
+            ->withCount('variants') //Atributo virtual, me permite hacer $product->variant_count en la vista
             ->latest()
             ->get();
 
