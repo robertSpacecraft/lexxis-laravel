@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Admin\productImageController;
+use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ProductVariantImageController;
 use App\Http\Controllers\Admin\PrintFileController;
 use App\Http\Controllers\Admin\PrintJobController;
@@ -163,5 +163,33 @@ Route::middleware(['auth', 'admin'])
 
 
     });
+
+    //URL tempora, devuelve un json con la info para ver errores del despliegue
+\Route::get('/__debug/https', function () {
+    $request = request();
+
+    return response()->json([
+        'is_secure' => $request->isSecure(),
+        'scheme' => $request->getScheme(),
+        'full_url' => $request->fullUrl(),
+        'host' => $request->getHost(),
+
+        'headers' => [
+            'forwarded' => $request->headers->get('forwarded'),
+            'x_forwarded_proto' => $request->headers->get('x-forwarded-proto'),
+            'x_forwarded_host' => $request->headers->get('x-forwarded-host'),
+            'x_forwarded_port' => $request->headers->get('x-forwarded-port'),
+            'x_forwarded_for' => $request->headers->get('x-forwarded-for'),
+        ],
+
+        'server' => [
+            'HTTPS' => $_SERVER['HTTPS'] ?? null,
+            'REQUEST_SCHEME' => $_SERVER['REQUEST_SCHEME'] ?? null,
+            'HTTP_X_FORWARDED_PROTO' => $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null,
+            'HTTP_FORWARDED' => $_SERVER['HTTP_FORWARDED'] ?? null,
+        ],
+    ]);
+});
+
 
 require __DIR__.'/auth.php';

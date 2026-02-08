@@ -10,7 +10,7 @@ use App\Http\Requests\StoreProductImageRequest;
 use App\Http\Requests\UpdateProductImageRequest;
 use Illuminate\Support\Facades\Storage;
 
-class productImageController extends Controller
+class ProductImageController extends Controller
 {
     public function index(Product $product){
         $images = $product->images()
