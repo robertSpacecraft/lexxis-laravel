@@ -169,6 +169,7 @@ Route::middleware(['auth', 'admin'])
     $request = request();
 
     return response()->json([
+        'php_version' => PHP_VERSION,
         'is_secure' => $request->isSecure(),
         'scheme' => $request->getScheme(),
         'full_url' => $request->fullUrl(),
