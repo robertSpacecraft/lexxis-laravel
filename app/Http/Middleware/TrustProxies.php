@@ -10,7 +10,7 @@ class TrustProxies extends Middleware
     //Confiar en todos los proxies ya que Railway actuará como tal.
     protected $proxies = '*';
 
-    //Aceptar los encabezados X-Forwarded-* para detectar HTTPS real.
+    //Aceptar los Header X-Forwarded-* para detectar HTTPS real.
     protected $headers =
         Request::HEADER_X_FORWARDED_FOR |
         Request::HEADER_X_FORWARDED_HOST |

@@ -19,7 +19,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174'],
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'https://lexxis-laravel-production.up.railway.app',
+        'https://lexxis.vercel.app'
+    ],
 
     'allowed_origins_patterns' => [],
 
