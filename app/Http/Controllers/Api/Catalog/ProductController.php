@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Catalog;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -17,6 +18,7 @@ class ProductController extends Controller
 
         if ($request->filled('q')) {
             $q = trim((string) $request->query('q'));
+
             $query->where(function ($sub) use ($q) {
                 $sub->where('name', 'like', "%{$q}%")
                     ->orWhere('slug', 'like', "%{$q}%")
@@ -26,15 +28,7 @@ class ProductController extends Controller
 
         $products = $query->paginate(15);
 
-        return response()->json([
-            'data' => $products->items(),
-            'meta' => [
-                'current_page' => $products->currentPage(),
-                'per_page' => $products->perPage(),
-                'total' => $products->total(),
-                'last_page' => $products->lastPage(),
-            ],
-        ]);
+        return ApiResponse::paginated($products);
     }
 
     public function show(Product $product)
@@ -50,8 +44,6 @@ class ProductController extends Controller
             },
         ]);
 
-        return response()->json([
-            'data' => $product,
-        ]);
+        return ApiResponse::success($product);
     }
 }

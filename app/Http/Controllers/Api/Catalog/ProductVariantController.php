@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Catalog;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Support\ApiResponse;
 
 class ProductVariantController extends Controller
 {
@@ -18,9 +19,7 @@ class ProductVariantController extends Controller
             ->latest()
             ->get();
 
-        return response()->json([
-            'data' => $variants,
-        ]);
+        return ApiResponse::success($variants);
     }
 
     public function show(Product $product, ProductVariant $variant)
@@ -37,8 +36,6 @@ class ProductVariantController extends Controller
             },
         ]);
 
-        return response()->json([
-            'data' => $variant,
-        ]);
+        return ApiResponse::success($variant);
     }
 }
