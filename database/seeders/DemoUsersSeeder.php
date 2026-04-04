@@ -9,12 +9,8 @@ use Illuminate\Support\Facades\Hash;
 
 class DemoUsersSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Demo CUSTOMER
         User::updateOrCreate(
             ['email' => 'demo@lexxis.test'],
             [
@@ -27,7 +23,18 @@ class DemoUsersSeeder extends Seeder
             ]
         );
 
-        // Demo ADMIN (útil para entrar al panel si lo necesitas)
+        User::updateOrCreate(
+            ['email' => 'maria@lexxis.test'],
+            [
+                'name' => 'María',
+                'last_name' => 'Demo',
+                'phone' => '611111111',
+                'role' => UserRole::CUSTOMER,
+                'is_active' => true,
+                'password' => Hash::make('password'),
+            ]
+        );
+
         User::updateOrCreate(
             ['email' => 'admin@lexxis.test'],
             [

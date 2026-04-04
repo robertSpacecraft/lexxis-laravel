@@ -11,15 +11,8 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'last_name',
@@ -30,21 +23,11 @@ class User extends Authenticatable
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -55,34 +38,32 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Aunque el valor por defecto en la migración ya es customer, sobreescribo el método
-     * para reforzar la instrucción
-     */
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($user) {
-            if (!$user->role){
+            if (!$user->role) {
                 $user->role = \App\Enums\UserRole::CUSTOMER;
             }
         });
     }
 
-    //Para poder ver la lista de Addresses de un usuario usando $user->addresses
-    public function addresses(){
+    public function addresses()
+    {
         return $this->hasMany(Address::class);
     }
 
-    //para comprobar el rol del usuario
-    public function isAdmin(): bool {
+    public function isAdmin(): bool
+    {
         return $this->role === \App\Enums\UserRole::ADMIN;
     }
 
-    public function isCustomer(): bool {
+    public function isCustomer(): bool
+    {
         return $this->role === \App\Enums\UserRole::CUSTOMER;
     }
+
     public function cart()
     {
         return $this->hasOne(\App\Models\Cart::class);
@@ -93,5 +74,8 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Cart::class);
     }
 
-
+    public function productDesigns()
+    {
+        return $this->hasMany(ProductDesign::class);
+    }
 }

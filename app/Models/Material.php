@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\ProductVariant;
 use App\Models\PrintJob;
 
-
 class Material extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',
@@ -29,11 +29,19 @@ class Material extends Model
         'shore_value' => 'integer',
         'is_active' => 'boolean',
     ];
-    public function productVariants(){
+
+    public function productVariants()
+    {
         return $this->hasMany(ProductVariant::class);
     }
 
-    public function printJobs(){
+    public function productDesigns()
+    {
+        return $this->hasMany(ProductDesign::class);
+    }
+
+    public function printJobs()
+    {
         return $this->hasMany(PrintJob::class);
     }
 }

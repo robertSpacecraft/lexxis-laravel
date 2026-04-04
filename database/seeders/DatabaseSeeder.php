@@ -22,11 +22,10 @@ class DatabaseSeeder extends Seeder
         $this->call(DevStreetsSeeder::class);
         $this->call(DemoUsersSeeder::class);
         $this->call(DemoAddressesSeeder::class);
+        $this->call(DemoProductsSeeder::class);
+        $this->call(DemoProductVariantsSeeder::class);
+        $this->call(DemoProductDesignsSeeder::class);
         $this->call(DevOrdersSeeder::class);
         $this->call(PricingSettingSeeder::class);
-
-
-
-
     }
 }

@@ -1,18 +1,19 @@
 <?php
 
+use App\Http\Controllers\Admin\AddressController;
 use App\Http\Controllers\Admin\MaterialController;
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Admin\ProductImageController;
-use App\Http\Controllers\Admin\ProductVariantImageController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PrintFileController;
 use App\Http\Controllers\Admin\PrintJobController;
-use App\Http\Controllers\Admin\AddressController;
-use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductDesignController;
+use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ProductVariantImageController;
 use App\Http\Controllers\Admin\UserCartController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -28,7 +29,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-//Creo este grupo de rutas para el layout del admin protegida con el middleware configurado en /bootstrap/app.php || /Middleware/EnsureUserIsAdmin.php que usa las funciones de model/User.php
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
@@ -37,11 +37,11 @@ Route::middleware(['auth', 'admin'])
             return view('admin.dashboard');
         })->name('dashboard');
 
-        //CRUD de Product
+        // CRUD de Product
         Route::resource('products', ProductController::class)
             ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
-        //CRUD de ProductsVariant
+        // CRUD de ProductsVariant
         Route::get('/products/{product}/variants', [ProductVariantController::class, 'variants'])->name('products.variants.index');
         Route::get('/products/{product}/variants/create', [ProductVariantController::class, 'variantsCreate'])
             ->name('products.variants.create');
@@ -53,12 +53,29 @@ Route::middleware(['auth', 'admin'])
             ->name('products.variants.update');
         Route::delete('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsDestroy'])
             ->name('products.variants.destroy');
+        Route::get('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsShow'])
+            ->name('products.variants.show');
 
-        //CRUD de Material
+        // ProductDesigns (global + anidado a producto)
+        Route::get('/product-designs', [ProductDesignController::class, 'globalIndex'])
+            ->name('product-designs.index');
+
+        Route::get('/products/{product}/designs', [ProductDesignController::class, 'productIndex'])
+            ->name('products.designs.index');
+        Route::get('/products/{product}/designs/{design}', [ProductDesignController::class, 'show'])
+            ->name('products.designs.show');
+        Route::get('/products/{product}/designs/{design}/edit', [ProductDesignController::class, 'edit'])
+            ->name('products.designs.edit');
+        Route::put('/products/{product}/designs/{design}', [ProductDesignController::class, 'update'])
+            ->name('products.designs.update');
+        Route::delete('/products/{product}/designs/{design}', [ProductDesignController::class, 'destroy'])
+            ->name('products.designs.destroy');
+
+        // CRUD de Material
         Route::resource('materials', MaterialController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
 
-        //CRUD de ProductImage
+        // CRUD de ProductImage
         Route::get('/products/{product}/images', [ProductImageController::class, 'index'])->name('products.images.index');
         Route::get('/products/{product}/images/create', [ProductImageController::class, 'create'])->name('products.images.create');
         Route::post('/products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');
@@ -79,8 +96,6 @@ Route::middleware(['auth', 'admin'])
             ->name('products.variants.images.update');
         Route::delete('/products/{product}/variants/{variant}/images/{image}', [ProductVariantImageController::class, 'destroy'])
             ->name('products.variants.images.destroy');
-        Route::get('/products/{product}/variants/{variant}', [ProductVariantController::class, 'variantsShow'])
-            ->name('products.variants.show');
 
         // CRUD de PrintFile
         Route::get('/print-files', [PrintFileController::class, 'index'])
@@ -100,7 +115,7 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/print-files/{printFile}', [PrintFileController::class, 'destroy'])
             ->name('print-files.destroy');
 
-        // CRUD de PrintJobs (anidado bajo PrintFiles)
+        // CRUD de PrintJobs
         Route::get('/print-files/{printFile}/jobs', [PrintJobController::class, 'index'])
             ->name('print-files.jobs.index');
         Route::get('/print-files/{printFile}/jobs/create', [PrintJobController::class, 'create'])
@@ -116,11 +131,11 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/print-files/{printFile}/jobs/{printJob}', [PrintJobController::class, 'destroy'])
             ->name('print-files.jobs.destroy');
 
-        //CRUD de User
+        // CRUD de User
         Route::resource('users', UserController::class)
             ->only(['index', 'show', 'edit', 'update']);
 
-        // CRUD de Addresses (anidado bajo Users)
+        // CRUD de Addresses
         Route::get('/users/{user}/addresses', [AddressController::class, 'index'])
             ->name('users.addresses.index');
         Route::get('/users/{user}/addresses/{address}', [AddressController::class, 'show'])
@@ -132,7 +147,7 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/users/{user}/addresses/{address}', [AddressController::class, 'destroy'])
             ->name('users.addresses.destroy');
 
-        //CRUD de Cart
+        // CRUD de Cart
         Route::get('/users/{user}/cart', [UserCartController::class, 'show'])
             ->name('users.cart.show');
         Route::post('/users/{user}/cart/items/product-variants/{variant}', [UserCartController::class, 'addProductVariant'])
@@ -142,8 +157,7 @@ Route::middleware(['auth', 'admin'])
         Route::post('/users/{user}/cart/checkout', [UserCartController::class, 'checkout'])
             ->name('users.cart.checkout');
 
-        //CRUD de Order
-            //Solo lectura para el acceso desde el panel
+        // CRUD de Order
         Route::get('/orders', [OrderController::class, 'globalIndex'])
             ->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'globalShow'])
@@ -153,16 +167,10 @@ Route::middleware(['auth', 'admin'])
         Route::put('/orders/{order}', [OrderController::class, 'update'])
             ->name('orders.update');
 
-            //Resto de rutas anidadas a User
         Route::get('/users/{user}/orders', [OrderController::class, 'userIndex'])
             ->name('users.orders.index');
         Route::get('/users/{user}/orders/{order}', [OrderController::class, 'userShow'])
             ->name('users.orders.show');
-
-
-
-
     });
 
-
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

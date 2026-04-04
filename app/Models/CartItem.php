@@ -12,6 +12,7 @@ class CartItem extends Model
     protected $fillable = [
         'cart_id',
         'product_variant_id',
+        'product_design_id',
         'print_job_id',
         'quantity',
         'unit_price',
@@ -20,10 +21,10 @@ class CartItem extends Model
     ];
 
     protected $casts = [
-        'quantity'  => 'integer',
-        'unit_price'=> 'decimal:2',
-        'subtotal'  => 'decimal:2',
-        'metadata'  => 'array',
+        'quantity' => 'integer',
+        'unit_price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'metadata' => 'array',
     ];
 
     public function cart()
@@ -36,9 +37,13 @@ class CartItem extends Model
         return $this->belongsTo(ProductVariant::class);
     }
 
+    public function productDesign()
+    {
+        return $this->belongsTo(ProductDesign::class);
+    }
+
     public function printJob()
     {
         return $this->belongsTo(PrintJob::class);
     }
 }
-

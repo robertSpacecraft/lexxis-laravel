@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory; //Me permite crear factories para tests, seeders, tinker.
-    use SoftDeletes; //Para no borrar un producto eliminando el histórico.
+    use HasFactory;
+    use SoftDeletes;
+
     protected $fillable = [
         'name',
         'slug',
@@ -22,21 +23,28 @@ class Product extends Model
         'is_active',
     ];
 
-    //Para el tipado automático
     protected $casts = [
         'base_price' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 
-    //Función para acceder a todos los Product
-    public function variants(){
+    public function variants()
+    {
         return $this->hasMany(ProductVariant::class);
     }
 
-    public function images(){
+    public function designs()
+    {
+        return $this->hasMany(ProductDesign::class);
+    }
+
+    public function images()
+    {
         return $this->hasMany(ProductImage::class);
     }
-    public function mainImage(){
+
+    public function mainImage()
+    {
         return $this->hasOne(ProductImage::class)->where('is_main', true);
     }
 }

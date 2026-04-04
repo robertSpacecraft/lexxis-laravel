@@ -3,9 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>{{ config('app.name', 'Lexxis') }} · Admin</title>
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased bg-gray-100">
@@ -21,7 +19,8 @@
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-gray-900">Dashboard</a>
                     <a href="{{ route('admin.orders.index') }}" class="hover:text-gray-900">Pedidos</a>
                     <a href="{{ route('admin.users.index') }}" class="hover:text-gray-900">Usuarios</a>
-                    <a href="{{ route('admin.products.index' )}}" class="hover:text-gray-900">Productos</a>
+                    <a href="{{ route('admin.products.index') }}" class="hover:text-gray-900">Productos</a>
+                    <a href="{{ route('admin.product-designs.index') }}" class="hover:text-gray-900">Diseños</a>
                     <a href="{{ route('admin.materials.index') }}" class="hover:text-gray-900">Materiales</a>
                     <a href="{{ route('admin.print-files.index') }}" class="hover:text-gray-900">Archivos imprimibles</a>
                 </nav>
@@ -47,17 +46,14 @@
             </div>
         @endif
 
-            @if (session('error'))
-                <div class="mb-4 rounded border border-red-300 text-red-600 bg-red-100 px-4 py-3 text-sm text-red-900">
-                    <strong>Error:</strong> {{ session('error') }}
-                </div>
-            @endif
+        @if (session('error'))
+            <div class="mb-4 rounded border border-red-300 text-red-600 bg-red-100 px-4 py-3 text-sm text-red-900">
+                <strong>Error:</strong> {{ session('error') }}
+            </div>
+        @endif
 
-
-            @yield('content')
+        @yield('content')
     </main>
-
-
 </div>
 </body>
 </html>

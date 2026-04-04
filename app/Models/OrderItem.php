@@ -12,6 +12,7 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_variant_id',
+        'product_design_id',
         'print_job_id',
         'item_name',
         'unit_price',
@@ -22,9 +23,9 @@ class OrderItem extends Model
 
     protected $casts = [
         'unit_price' => 'decimal:2',
-        'quantity'   => 'integer',
-        'subtotal'   => 'decimal:2',
-        'metadata'   => 'array',
+        'quantity' => 'integer',
+        'subtotal' => 'decimal:2',
+        'metadata' => 'array',
     ];
 
     public function order()
@@ -35,6 +36,11 @@ class OrderItem extends Model
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function productDesign()
+    {
+        return $this->belongsTo(ProductDesign::class);
     }
 
     public function printJob()
