@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\Catalog\ProductConfiguratorController;
 use App\Http\Controllers\Api\Catalog\ProductController as CatalogProductController;
 use App\Http\Controllers\Api\Catalog\ProductVariantController as CatalogProductVariantController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PrintFileController as UserPrintFileController;
 use App\Http\Controllers\Api\ProductDesignController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -25,6 +26,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', function (Request $request) {
         return ApiResponse::success($request->user());
     });
+
+    Route::patch('/me', [AuthController::class, 'updateMe']);
 });
 
 // Catálogo público (sin login)
@@ -60,5 +63,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [CartController::class, 'show']);
         Route::post('/product-variants/{variant}', [CartController::class, 'addProductVariant']);
         Route::post('/product-designs/{productDesign}', [CartController::class, 'addProductDesign']);
+        Route::patch('/items/{cartItem}', [CartController::class, 'updateItemQuantity']);
+        Route::delete('/items/{cartItem}', [CartController::class, 'destroyItem']);
+        Route::post('/print-jobs/{printJob}', [CartController::class, 'addPrintJob']);
+    });
+
+    // Pedidos
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index']);
+        Route::get('/{order}', [OrderController::class, 'show']);
+        Route::post('/checkout', [OrderController::class, 'checkout']);
     });
 });

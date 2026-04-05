@@ -36,10 +36,10 @@
                             <img
                                 src="{{ Storage::url($product->mainImage->path) }}"
                                 alt="{{ $product->mainImage->alt_text ?? '' }}"
-                                style="height: 90px; width: 90px; object-fit: contain; border-radius: 6px;"
+                                style="height:150px; width:150px; object-fit:contain; border-radius:6px;"
                             >
                         @else
-                            <div style="height: 90px; width: 90px; border: 1px solid #ddd; border-radius: 6px;"></div>
+                            <div style="height:90px; width:90px; border:1px solid #ddd; border-radius:6px;"></div>
                         @endif
                     </td>
 

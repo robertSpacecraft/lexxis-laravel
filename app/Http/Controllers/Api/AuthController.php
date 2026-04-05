@@ -77,4 +77,26 @@ class AuthController extends Controller
             message: 'Login correcto'
         );
     }
+
+    public function updateMe(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'password' => ['sometimes', 'string', 'min:6'],
+        ]);
+
+        if (isset($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
+        }
+
+        $user->update($data);
+
+        return ApiResponse::success(
+            data: $user->fresh(),
+            message: 'Perfil actualizado correctamente.'
+        );
+    }
 }
