@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Catalog;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Catalog\CatalogProductVariantResource;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Support\ApiResponse;
@@ -15,11 +16,16 @@ class ProductVariantController extends Controller
 
         $variants = $product->variants()
             ->where('is_active', true)
-            ->with(['material', 'mainImage'])
+            ->with([
+                'material',
+                'mainImage',
+            ])
             ->latest()
             ->get();
 
-        return ApiResponse::success($variants);
+        return ApiResponse::success(
+            CatalogProductVariantResource::collection($variants)
+        );
     }
 
     public function show(Product $product, ProductVariant $variant)
@@ -32,10 +38,11 @@ class ProductVariantController extends Controller
             'material',
             'mainImage',
             'images' => function ($q) {
-                $q->orderBy('sort_order');
+                $q->orderByDesc('is_main')
+                    ->orderBy('sort_order');
             },
         ]);
 
-        return ApiResponse::success($variant);
+        return ApiResponse::success(new CatalogProductVariantResource($variant));
     }
 }

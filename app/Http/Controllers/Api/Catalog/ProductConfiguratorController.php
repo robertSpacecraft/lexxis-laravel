@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\Catalog;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Catalog\CatalogProductVariantResource;
+use App\Http\Resources\Catalog\MaterialResource;
+use App\Http\Resources\Catalog\ProductVariantImageResource;
 use App\Models\Material;
 use App\Models\Product;
 use App\Support\ApiResponse;
@@ -17,7 +20,10 @@ class ProductConfiguratorController extends Controller
 
         $activeVariants = $product->variants()
             ->where('is_active', true)
-            ->with(['material:id,name,slug,material_type', 'mainImage'])
+            ->with([
+                'material:id,name,slug,material_type,brand,supplier,shore_a,shore_scale,shore_value,description,is_active',
+                'mainImage',
+            ])
             ->get();
 
         $materials = $activeVariants
@@ -30,7 +36,19 @@ class ProductConfiguratorController extends Controller
             $materials = Material::query()
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name', 'slug', 'material_type']);
+                ->get([
+                    'id',
+                    'name',
+                    'slug',
+                    'material_type',
+                    'brand',
+                    'supplier',
+                    'shore_a',
+                    'shore_scale',
+                    'shore_value',
+                    'description',
+                    'is_active',
+                ]);
         }
 
         $colorsByMaterial = $activeVariants
@@ -45,7 +63,9 @@ class ProductConfiguratorController extends Controller
                         return [
                             'name' => $colorName,
                             'preview_variant_id' => $previewVariant->id,
-                            'preview_image' => $previewVariant->mainImage,
+                            'preview_image' => $previewVariant->mainImage
+                                ? new ProductVariantImageResource($previewVariant->mainImage)
+                                : null,
                         ];
                     })
                     ->values();
@@ -78,12 +98,14 @@ class ProductConfiguratorController extends Controller
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'base_price' => $product->base_price,
-                'main_image' => $product->mainImage,
+                'main_image' => $product->mainImage
+                    ? new \App\Http\Resources\Catalog\ProductImageResource($product->mainImage)
+                    : null,
             ],
-            'materials' => $materials,
+            'materials' => MaterialResource::collection($materials),
             'colors_by_material' => $colorsByMaterial,
             'sizes' => $sizes,
-            'preview_variants' => $activeVariants,
+            'preview_variants' => CatalogProductVariantResource::collection($activeVariants),
         ]);
     }
 }
