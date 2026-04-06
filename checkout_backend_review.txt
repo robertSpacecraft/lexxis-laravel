@@ -1,0 +1,2231 @@
+===== FILE: app/Models/Cart.php =====
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Cart extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'status',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+}
+
+
+
+===== FILE: app/Models/CartItem.php =====
+<?php
+
+namespace App\Models;
+
+use App\Enums\CartItemType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class CartItem extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'cart_id',
+        'product_variant_id',
+        'product_design_id',
+        'print_job_id',
+        'type',
+        'quantity',
+        'unit_price',
+        'subtotal',
+        'metadata',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'unit_price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'metadata' => 'array',
+        'type' => CartItemType::class,
+    ];
+
+    public function cart()
+    {
+        return $this->belongsTo(Cart::class);
+    }
+
+    public function productVariant()
+    {
+        return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function productDesign()
+    {
+        return $this->belongsTo(ProductDesign::class);
+    }
+
+    public function printJob()
+    {
+        return $this->belongsTo(PrintJob::class);
+    }
+
+    public function isProductVariant(): bool
+    {
+        return ($this->type?->value ?? (string) $this->type) === CartItemType::ProductVariant->value;
+    }
+
+    public function isProductDesign(): bool
+    {
+        return ($this->type?->value ?? (string) $this->type) === CartItemType::ProductDesign->value;
+    }
+
+    public function isPrintJob(): bool
+    {
+        return ($this->type?->value ?? (string) $this->type) === CartItemType::PrintJob->value;
+    }
+}
+
+
+===== FILE: app/Models/Order.php =====
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+
+class Order extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'shipping_address_id',
+        'billing_address_id',
+        'order_number',
+        'status',
+        'payment_status',
+        'payment_method',
+        'subtotal',
+        'tax',
+        'shipping_cost',
+        'total',
+        'placed_at',
+        'notes',
+    ];
+
+    protected $casts = [
+        'subtotal'       => 'decimal:2',
+        'tax'            => 'decimal:2',
+        'shipping_cost'  => 'decimal:2',
+        'total'          => 'decimal:2',
+        'placed_at'      => 'datetime',
+        'status'         => OrderStatus::class,
+        'payment_status' => PaymentStatus::class,
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function shippingAddress()
+    {
+        return $this->belongsTo(Address::class, 'shipping_address_id');
+    }
+
+    public function billingAddress()
+    {
+        return $this->belongsTo(Address::class, 'billing_address_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+}
+
+
+
+===== FILE: app/Models/OrderItem.php =====
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class OrderItem extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'order_id',
+        'product_variant_id',
+        'product_design_id',
+        'print_job_id',
+        'item_name',
+        'unit_price',
+        'quantity',
+        'subtotal',
+        'metadata',
+    ];
+
+    protected $casts = [
+        'unit_price' => 'decimal:2',
+        'quantity' => 'integer',
+        'subtotal' => 'decimal:2',
+        'metadata' => 'array',
+    ];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function productVariant()
+    {
+        return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function productDesign()
+    {
+        return $this->belongsTo(ProductDesign::class);
+    }
+
+    public function printJob()
+    {
+        return $this->belongsTo(PrintJob::class);
+    }
+}
+
+
+===== FILE: app/Models/ProductVariant.php =====
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+
+class ProductVariant extends Model
+{
+    use HasFactory;
+    use SoftDeletes;
+
+    protected $fillable = [
+        'product_id',
+        'material_id',
+        'sku',
+        'size_eu',
+        'color_name',
+        'price',
+        'stock',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'size_eu' => 'decimal:1',
+        'price' => 'decimal:2',
+        'stock' => 'integer',
+        'is_active' => 'boolean',
+    ];
+
+    public function product(){
+        return $this->belongsTo(Product::class);
+    }
+    public function material(){
+        return $this->belongsTo(Material::class);
+    }
+    public function images()
+    {
+        return $this->hasMany(ProductVariantImage::class);
+    }
+    public function mainImage()
+    {
+        return $this->hasOne(ProductVariantImage::class)
+            ->orderByDesc('is_main')
+            ->orderBy('sort_order');
+    }
+
+
+}
+
+
+===== FILE: app/Models/ProductDesign.php =====
+<?php
+
+namespace App\Models;
+
+use App\Enums\ProductDesignStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class ProductDesign extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'user_id',
+        'product_id',
+        'material_id',
+        'color_name',
+        'size_eu',
+        'unit_price',
+        'pricing_breakdown',
+        'status',
+    ];
+
+    protected $casts = [
+        'size_eu' => 'decimal:1',
+        'unit_price' => 'decimal:2',
+        'pricing_breakdown' => 'array',
+        'status' => ProductDesignStatus::class,
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function material()
+    {
+        return $this->belongsTo(Material::class);
+    }
+
+    public function scopeOwnedBy($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    public function isDraft(): bool
+    {
+        return ($this->status?->value ?? (string) $this->status) === ProductDesignStatus::Draft->value;
+    }
+}
+
+
+===== FILE: app/Models/PrintJob.php =====
+<?php
+
+namespace App\Models;
+
+use App\Enums\PrintJobStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class PrintJob extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'user_id',
+        'print_file_id',
+        'material_id',
+        'technology',
+        'color_name',
+        'quantity',
+        'infill_percent',
+        'scale_percent',
+        'estimated_material_g',
+        'estimated_time_min',
+        'estimated_volume_cm3',
+        'analysis_source',
+        'unit_price',
+        'pricing_breakdown',
+        'status',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'infill_percent' => 'integer',
+        'scale_percent' => 'integer',
+        'estimated_material_g' => 'decimal:2',
+        'estimated_time_min' => 'integer',
+        'estimated_volume_cm3' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'pricing_breakdown' => 'array',
+        'status' => PrintJobStatus::class,
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function printFile()
+    {
+        return $this->belongsTo(PrintFile::class);
+    }
+
+    public function material()
+    {
+        return $this->belongsTo(Material::class);
+    }
+
+    public function isEditableByUser(): bool
+    {
+        $status = $this->status?->value ?? (string) $this->status;
+
+        return in_array($status, [
+            PrintJobStatus::Draft->value,
+            PrintJobStatus::Priced->value,
+        ], true);
+    }
+
+    public function isDeletableByUser(): bool
+    {
+        $status = $this->status?->value ?? (string) $this->status;
+
+        return in_array($status, [
+            PrintJobStatus::Draft->value,
+            PrintJobStatus::Priced->value,
+            PrintJobStatus::ReviewPending->value,
+        ], true);
+    }
+}
+
+
+===== FILE: app/Enums/CartItemType.php =====
+<?php
+
+namespace App\Enums;
+
+enum CartItemType: string
+{
+    case ProductVariant = 'product_variant';
+    case ProductDesign = 'product_design';
+    case PrintJob = 'print_job';
+
+    public static function values(): array
+    {
+        return array_map(fn (self $case) => $case->value, self::cases());
+    }
+}
+
+
+===== FILE: app/Enums/OrderStatus.php =====
+<?php
+
+namespace App\Enums;
+
+enum OrderStatus: string
+{
+    case PENDING = 'pending';
+    case PROCESSING = 'processing';
+    case COMPLETED = 'completed';
+    case CANCELLED = 'cancelled';
+}
+
+
+===== FILE: app/Enums/PaymentStatus.php =====
+<?php
+
+namespace App\Enums;
+
+enum PaymentStatus: string
+{
+    case PENDING = 'pending';
+    case PAID = 'paid';
+    case FAILED = 'failed';
+    case REFUNDED = 'refunded';
+}
+
+
+===== FILE: app/Http/Controllers/Api/CartController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Enums\CartItemType;
+use App\Enums\ProductDesignStatus;
+use App\Enums\PrintJobStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Carts\AddPrintJobToCartRequest;
+use App\Http\Requests\Carts\AddProductDesignToCartRequest;
+use App\Http\Requests\Carts\AddProductVariantToCartRequest;
+use App\Http\Requests\Carts\UpdateCartItemQuantityRequest;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\PrintJob;
+use App\Models\ProductDesign;
+use App\Models\ProductVariant;
+use App\Support\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class CartController extends Controller
+{
+    public function show(Request $request)
+    {
+        $cart = $this->loadActiveCart($request->user()->id);
+
+        return ApiResponse::success($cart);
+    }
+
+    public function addProductVariant(
+        AddProductVariantToCartRequest $request,
+        ProductVariant $variant
+    ) {
+        abort_unless($variant->is_active, 422, 'La variante no está disponible.');
+
+        $userId = auth()->id();
+        $quantityToAdd = (int) $request->validated()['quantity'];
+        $unitPrice = (string) ($variant->price ?? $variant->product?->base_price ?? '0.00');
+
+        $cart = Cart::query()->firstOrCreate(
+            [
+                'user_id' => $userId,
+                'status' => 'active',
+            ],
+            []
+        );
+
+        DB::transaction(function () use ($cart, $variant, $quantityToAdd, $unitPrice) {
+            $item = CartItem::query()
+                ->where('cart_id', $cart->id)
+                ->where('product_variant_id', $variant->id)
+                ->whereNull('product_design_id')
+                ->whereNull('print_job_id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($item) {
+                $newQty = $item->quantity + $quantityToAdd;
+
+                $item->update([
+                    'type' => CartItemType::ProductVariant,
+                    'quantity' => $newQty,
+                    'unit_price' => $unitPrice,
+                    'subtotal' => $this->moneyMul($unitPrice, $newQty),
+                ]);
+
+                return;
+            }
+
+            CartItem::query()->create([
+                'cart_id' => $cart->id,
+                'product_variant_id' => $variant->id,
+                'product_design_id' => null,
+                'print_job_id' => null,
+                'type' => CartItemType::ProductVariant,
+                'quantity' => $quantityToAdd,
+                'unit_price' => $unitPrice,
+                'subtotal' => $this->moneyMul($unitPrice, $quantityToAdd),
+                'metadata' => [
+                    'source' => 'product_variant',
+                ],
+            ]);
+        });
+
+        $cart = $this->loadActiveCart($userId);
+
+        return ApiResponse::success(
+            data: $cart,
+            message: 'Variante añadida al carrito.'
+        );
+    }
+
+    public function addProductDesign(
+        AddProductDesignToCartRequest $request,
+        ProductDesign $productDesign
+    ) {
+        $userId = auth()->id();
+
+        abort_unless((int) $productDesign->user_id === (int) $userId, 403);
+        abort_unless($productDesign->isDraft(), 422, 'Este diseño no se puede añadir al carrito en su estado actual.');
+
+        $quantityToAdd = $request->validatedQuantity();
+        $unitPrice = (string) ($productDesign->unit_price ?? '0.00');
+
+        $cart = Cart::query()->firstOrCreate(
+            [
+                'user_id' => $userId,
+                'status' => 'active',
+            ],
+            []
+        );
+
+        DB::transaction(function () use ($cart, $productDesign, $quantityToAdd, $unitPrice) {
+            $lockedDesign = ProductDesign::query()
+                ->whereKey($productDesign->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless($lockedDesign->isDraft(), 422, 'Este diseño no se puede añadir al carrito en su estado actual.');
+
+            $existing = CartItem::query()
+                ->where('cart_id', $cart->id)
+                ->where('product_design_id', $lockedDesign->id)
+                ->whereNull('product_variant_id')
+                ->whereNull('print_job_id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                $newQty = $existing->quantity + $quantityToAdd;
+
+                $existing->update([
+                    'type' => CartItemType::ProductDesign,
+                    'quantity' => $newQty,
+                    'unit_price' => $unitPrice,
+                    'subtotal' => $this->moneyMul($unitPrice, $newQty),
+                ]);
+
+                return;
+            }
+
+            CartItem::query()->create([
+                'cart_id' => $cart->id,
+                'product_variant_id' => null,
+                'product_design_id' => $lockedDesign->id,
+                'print_job_id' => null,
+                'type' => CartItemType::ProductDesign,
+                'quantity' => $quantityToAdd,
+                'unit_price' => $unitPrice,
+                'subtotal' => $this->moneyMul($unitPrice, $quantityToAdd),
+                'metadata' => [
+                    'source' => 'product_design',
+                    'material_id' => $lockedDesign->material_id,
+                    'color_name' => $lockedDesign->color_name,
+                    'size_eu' => $lockedDesign->size_eu,
+                ],
+            ]);
+
+            $lockedDesign->status = ProductDesignStatus::InCart;
+            $lockedDesign->save();
+        });
+
+        $cart = $this->loadActiveCart($userId);
+
+        return ApiResponse::success(
+            data: $cart,
+            message: 'Diseño añadido al carrito.'
+        );
+    }
+
+    public function addPrintJob(
+        AddPrintJobToCartRequest $request,
+        PrintJob $printJob
+    ) {
+        $userId = auth()->id();
+
+        abort_unless((int) $printJob->user_id === (int) $userId, 403);
+
+        abort_unless(
+            ($printJob->status?->value ?? (string) $printJob->status) === PrintJobStatus::Priced->value,
+            422,
+            'Este trabajo de impresión no está listo para añadirse al carrito.'
+        );
+
+        $quantity = $request->validatedQuantity();
+        $unitPrice = (string) ($printJob->unit_price ?? '0.00');
+
+        $cart = Cart::query()->firstOrCreate([
+            'user_id' => $userId,
+            'status' => 'active',
+        ]);
+
+        DB::transaction(function () use ($cart, $printJob, $quantity, $unitPrice) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                ($lockedJob->status?->value ?? (string) $lockedJob->status) === PrintJobStatus::Priced->value,
+                422,
+                'Este trabajo de impresión no se puede añadir al carrito.'
+            );
+
+            $existing = CartItem::query()
+                ->where('cart_id', $cart->id)
+                ->where('print_job_id', $lockedJob->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                abort(422, 'Este trabajo de impresión ya está en el carrito.');
+            }
+
+            CartItem::query()->create([
+                'cart_id' => $cart->id,
+                'product_variant_id' => null,
+                'product_design_id' => null,
+                'print_job_id' => $lockedJob->id,
+                'type' => CartItemType::PrintJob,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'subtotal' => $this->moneyMul($unitPrice, $quantity),
+                'metadata' => [
+                    'source' => 'print_job',
+                    'material_id' => $lockedJob->material_id,
+                    'color_name' => $lockedJob->color_name,
+                    'technology' => $lockedJob->technology,
+                    'estimated_material_g' => $lockedJob->estimated_material_g,
+                    'estimated_time_min' => $lockedJob->estimated_time_min,
+                ],
+            ]);
+
+            $lockedJob->status = PrintJobStatus::InCart;
+            $lockedJob->save();
+        });
+
+        $cart = $this->loadActiveCart($userId);
+
+        return ApiResponse::success(
+            data: $cart,
+            message: 'Trabajo de impresión añadido al carrito.'
+        );
+    }
+
+    public function updateItemQuantity(
+        UpdateCartItemQuantityRequest $request,
+        CartItem $cartItem
+    ) {
+        $this->ensureOwnership($cartItem);
+
+        abort_unless(
+            $cartItem->isProductVariant(),
+            422,
+            'Solo se puede modificar la cantidad de variantes de producto.'
+        );
+
+        $newQuantity = $request->validatedQuantity();
+        $unitPrice = (string) $cartItem->unit_price;
+
+        $cartItem->update([
+            'quantity' => $newQuantity,
+            'subtotal' => $this->moneyMul($unitPrice, $newQuantity),
+        ]);
+
+        $cart = $this->loadActiveCart(auth()->id());
+
+        return ApiResponse::success(
+            data: $cart,
+            message: 'Cantidad actualizada correctamente.'
+        );
+    }
+
+    public function destroyItem(CartItem $cartItem)
+    {
+        $this->ensureOwnership($cartItem);
+
+        DB::transaction(function () use ($cartItem) {
+            $designId = $cartItem->product_design_id;
+
+            $cartItem->delete();
+
+            if ($designId) {
+                $design = ProductDesign::query()->find($designId);
+
+                if ($design && ($design->status?->value ?? (string) $design->status) === ProductDesignStatus::InCart->value) {
+                    $design->status = ProductDesignStatus::Draft;
+                    $design->save();
+                }
+            }
+
+            $printJobId = $cartItem->print_job_id;
+
+            if ($printJobId) {
+                $job = PrintJob::query()->find($printJobId);
+
+                if ($job && ($job->status?->value ?? (string) $job->status) === PrintJobStatus::InCart->value) {
+                    $job->status = PrintJobStatus::Priced;
+                    $job->save();
+                }
+            }
+        });
+
+        $cart = $this->loadActiveCart(auth()->id());
+
+        return ApiResponse::success(
+            data: $cart,
+            message: 'Item eliminado del carrito.'
+        );
+    }
+
+    private function ensureOwnership(CartItem $cartItem): void
+    {
+        abort_unless(
+            (int) $cartItem->cart?->user_id === (int) auth()->id(),
+            403
+        );
+    }
+
+    private function loadActiveCart(int $userId): ?Cart
+    {
+        return Cart::query()
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->with([
+                'items.productVariant.product:id,name,slug',
+                'items.productVariant.mainImage',
+                'items.productDesign.product:id,name,slug',
+                'items.productDesign.material:id,name,slug,material_type',
+                'items.printJob.material:id,name,slug,material_type',
+                'items.printJob.printFile:id,original_name',
+            ])
+            ->latest('id')
+            ->first();
+    }
+
+    private function moneyMul(string|float $unitPrice, int $quantity): string
+    {
+        $value = (float) $unitPrice * $quantity;
+
+        return number_format(round($value, 2), 2, '.', '');
+    }
+}
+
+
+===== FILE: app/Http/Controllers/Api/OrderController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Enums\ProductDesignStatus;
+use App\Enums\PrintJobStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Carts\CheckoutCartRequest;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\PrintJob;
+use App\Models\ProductDesign;
+use App\Models\ProductVariant;
+use App\Support\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class OrderController extends Controller
+{
+    public function index(Request $request)
+    {
+        $orders = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->with([
+                'items.productVariant.product:id,name,slug',
+                'items.productDesign.product:id,name,slug',
+                'items.printJob.printFile:id,original_name',
+            ])
+            ->latest('id')
+            ->paginate(15);
+
+        return ApiResponse::paginated($orders);
+    }
+
+    public function show(Request $request, Order $order)
+    {
+        abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
+
+        $order->load([
+            'shippingAddress.street.city.province.country',
+            'billingAddress.street.city.province.country',
+            'items.productVariant.product:id,name,slug',
+            'items.productVariant.mainImage',
+            'items.productDesign.product:id,name,slug',
+            'items.productDesign.material:id,name,slug,material_type',
+            'items.printJob.material:id,name,slug,material_type',
+            'items.printJob.printFile:id,original_name',
+        ]);
+
+        return ApiResponse::success($order);
+    }
+
+    public function checkout(CheckoutCartRequest $request)
+    {
+        $user = $request->user();
+
+        $cart = Cart::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->with([
+                'items.productVariant.product',
+                'items.productDesign',
+                'items.printJob',
+            ])
+            ->latest('id')
+            ->first();
+
+        abort_unless($cart, 422, 'No hay carrito activo.');
+        abort_unless($cart->items->count() > 0, 422, 'El carrito está vacío.');
+
+        return DB::transaction(function () use ($cart, $user, $request) {
+            $shippingAddressId = $request->shippingAddressId();
+            $billingAddressId = $request->billingAddressId();
+
+            if ($shippingAddressId) {
+                abort_unless(
+                    $user->addresses()->whereKey($shippingAddressId)->exists(),
+                    422,
+                    'La dirección de envío no es válida.'
+                );
+            } else {
+                $shippingAddressId = $user->addresses()->value('id');
+            }
+
+            if ($billingAddressId) {
+                abort_unless(
+                    $user->addresses()->whereKey($billingAddressId)->exists(),
+                    422,
+                    'La dirección de facturación no es válida.'
+                );
+            } else {
+                $billingAddressId = $shippingAddressId;
+            }
+
+            abort_unless($shippingAddressId, 422, 'No hay dirección de envío disponible.');
+
+            $order = Order::query()->create([
+                'user_id' => $user->id,
+                'order_number' => 'ORD-' . now()->format('YmdHis') . '-' . $user->id,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'shipping_address_id' => $shippingAddressId,
+                'billing_address_id' => $billingAddressId,
+                'subtotal' => $cart->items->sum('subtotal'),
+                'tax' => 0,
+                'shipping_cost' => 0,
+                'total' => $cart->items->sum('subtotal'),
+                'payment_method' => $request->paymentMethod(),
+                'notes' => $request->notes(),
+                'placed_at' => now(),
+            ]);
+
+            foreach ($cart->items as $item) {
+                if ($item->product_design_id) {
+                    $design = ProductDesign::query()
+                        ->lockForUpdate()
+                        ->find($item->product_design_id);
+
+                    abort_unless(
+                        $design && ($design->status?->value ?? (string) $design->status) === ProductDesignStatus::InCart->value,
+                        422,
+                        'El diseño ya no está disponible para checkout.'
+                    );
+                }
+
+                if ($item->print_job_id) {
+                    $job = PrintJob::query()
+                        ->lockForUpdate()
+                        ->find($item->print_job_id);
+
+                    abort_unless(
+                        $job && ($job->status?->value ?? (string) $job->status) === PrintJobStatus::InCart->value,
+                        422,
+                        'El trabajo de impresión ya no es válido para checkout.'
+                    );
+                }
+
+                if ($item->product_variant_id) {
+                    $variant = ProductVariant::query()->find($item->product_variant_id);
+
+                    abort_unless(
+                        $variant && $variant->is_active,
+                        422,
+                        'Una variante ya no está disponible.'
+                    );
+                }
+
+                OrderItem::query()->create([
+                    'order_id' => $order->id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'product_design_id' => $item->product_design_id,
+                    'print_job_id' => $item->print_job_id,
+                    'item_name' => $this->resolveItemName($item),
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $item->subtotal,
+                    'metadata' => $item->metadata,
+                ]);
+
+                if ($item->product_design_id) {
+                    $design = ProductDesign::query()->find($item->product_design_id);
+
+                    if ($design) {
+                        $design->status = ProductDesignStatus::Ordered;
+                        $design->save();
+                    }
+                }
+
+                if ($item->print_job_id) {
+                    $job = PrintJob::query()->find($item->print_job_id);
+
+                    if ($job) {
+                        $job->status = PrintJobStatus::Ordered;
+                        $job->save();
+                    }
+                }
+            }
+
+            $cart->status = 'checked_out';
+            $cart->save();
+
+            return ApiResponse::success(
+                data: $order->load('items'),
+                message: 'Pedido creado correctamente.'
+            );
+        });
+    }
+
+    private function resolveItemName(CartItem $item): string
+    {
+        if ($item->isProductVariant()) {
+            return $item->productVariant?->product?->name ?? 'Producto';
+        }
+
+        if ($item->isProductDesign()) {
+            return 'Diseño personalizado';
+        }
+
+        if ($item->isPrintJob()) {
+            return 'Trabajo de impresión 3D';
+        }
+
+        return 'Item';
+    }
+}
+
+
+===== FILE: app/Http/Controllers/Api/PrintJobController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Enums\PrintJobStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePrintJobRequest;
+use App\Http\Requests\UpdatePrintJobRequest;
+use App\Models\PrintFile;
+use App\Models\PrintJob;
+use App\Services\PrintFileAnalysisService;
+use App\Services\PrintJobPricingService;
+use App\Support\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PrintJobController extends Controller
+{
+    public function index(Request $request, PrintFile $printFile)
+    {
+        $this->ensureFileOwnership($request, $printFile);
+
+        $jobs = $printFile->printJobs()
+            ->where('user_id', $request->user()->id)
+            ->with([
+                'material:id,name,slug,material_type',
+                'printFile:id,original_name,file_extension',
+            ])
+            ->latest('id')
+            ->paginate(15);
+
+        return ApiResponse::paginated($jobs);
+    }
+
+    public function store(
+        StorePrintJobRequest $request,
+        PrintFile $printFile,
+        PrintFileAnalysisService $analysisService,
+        PrintJobPricingService $pricingService
+    ) {
+        $this->ensureFileOwnership($request, $printFile);
+
+        $data = $request->validated();
+
+        $job = DB::transaction(function () use ($request, $printFile, $data, $analysisService, $pricingService) {
+            $job = PrintJob::query()->create([
+                'user_id' => $request->user()->id,
+                'print_file_id' => $printFile->id,
+                'material_id' => $data['material_id'],
+                'technology' => $data['technology'],
+                'color_name' => $data['color_name'] ?? null,
+                'quantity' => $data['quantity'],
+                'infill_percent' => $data['infill_percent'],
+                'scale_percent' => $data['scale_percent'],
+                'status' => PrintJobStatus::Draft,
+            ]);
+
+            $job->load('material:id,material_type');
+
+            $analysis = $analysisService->analyze($printFile, [
+                'quantity' => $job->quantity,
+                'scale_percent' => $job->scale_percent,
+                'infill_percent' => $job->infill_percent,
+                'technology' => $job->technology,
+                'material_type' => $job->material?->material_type,
+            ]);
+
+            $job->fill([
+                'estimated_material_g' => $analysis['estimated_material_g'],
+                'estimated_time_min' => $analysis['estimated_time_min'],
+                'estimated_volume_cm3' => $analysis['estimated_volume_cm3'],
+                'analysis_source' => $analysis['analysis_source'],
+            ]);
+
+            $quote = $pricingService->quote($job, false);
+
+            $status = !empty($analysis['manual_review_required'])
+                ? PrintJobStatus::ReviewPending
+                : PrintJobStatus::Priced;
+
+            $job->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => array_merge(
+                    $quote['pricing_breakdown'],
+                    [
+                        'analysis_details' => $analysis['analysis'] ?? [],
+                        'manual_review_required' => (bool) ($analysis['manual_review_required'] ?? false),
+                        'review_reasons' => $analysis['review_reasons'] ?? [],
+                    ]
+                ),
+                'status' => $status,
+            ]);
+
+            $job->save();
+
+            return $job;
+        });
+
+        $job->load([
+            'material:id,name,slug,material_type',
+            'printFile:id,original_name,file_extension',
+        ]);
+
+        return ApiResponse::created(
+            data: $job,
+            message: 'PrintJob procesado correctamente.'
+        );
+    }
+
+    public function show(Request $request, PrintFile $printFile, PrintJob $printJob)
+    {
+        $this->ensureFileOwnership($request, $printFile);
+        $this->ensureJobBelongsToFile($printFile, $printJob);
+        $this->ensureJobOwnership($request, $printJob);
+
+        $printJob->load([
+            'material:id,name,slug,material_type',
+            'printFile:id,original_name,file_extension',
+        ]);
+
+        return ApiResponse::success($printJob);
+    }
+
+    public function update(
+        UpdatePrintJobRequest $request,
+        PrintFile $printFile,
+        PrintJob $printJob,
+        PrintFileAnalysisService $analysisService,
+        PrintJobPricingService $pricingService
+    ) {
+        $this->ensureFileOwnership($request, $printFile);
+        $this->ensureJobBelongsToFile($printFile, $printJob);
+        $this->ensureJobOwnership($request, $printJob);
+
+        abort_unless(
+            $printJob->isEditableByUser(),
+            422,
+            'Este trabajo de impresión no se puede modificar en su estado actual.'
+        );
+
+        $job = DB::transaction(function () use ($request, $printFile, $printJob, $analysisService, $pricingService) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                $lockedJob->isEditableByUser(),
+                422,
+                'Este trabajo de impresión no se puede modificar en su estado actual.'
+            );
+
+            $lockedJob->fill($request->validated());
+            $lockedJob->load('material:id,material_type');
+
+            $analysis = $analysisService->analyze($printFile, [
+                'quantity' => $lockedJob->quantity,
+                'scale_percent' => $lockedJob->scale_percent,
+                'infill_percent' => $lockedJob->infill_percent,
+                'technology' => $lockedJob->technology,
+                'material_type' => $lockedJob->material?->material_type,
+            ]);
+
+            $lockedJob->fill([
+                'estimated_material_g' => $analysis['estimated_material_g'],
+                'estimated_time_min' => $analysis['estimated_time_min'],
+                'estimated_volume_cm3' => $analysis['estimated_volume_cm3'],
+                'analysis_source' => $analysis['analysis_source'],
+            ]);
+
+            $quote = $pricingService->quote($lockedJob, false);
+
+            $status = !empty($analysis['manual_review_required'])
+                ? PrintJobStatus::ReviewPending
+                : PrintJobStatus::Priced;
+
+            $lockedJob->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => array_merge(
+                    $quote['pricing_breakdown'],
+                    [
+                        'analysis_details' => $analysis['analysis'] ?? [],
+                        'manual_review_required' => (bool) ($analysis['manual_review_required'] ?? false),
+                        'review_reasons' => $analysis['review_reasons'] ?? [],
+                    ]
+                ),
+                'status' => $status,
+            ]);
+
+            $lockedJob->save();
+
+            return $lockedJob;
+        });
+
+        $job->load([
+            'material:id,name,slug,material_type',
+            'printFile:id,original_name,file_extension',
+        ]);
+
+        return ApiResponse::success(
+            data: $job,
+            message: 'PrintJob actualizado correctamente.'
+        );
+    }
+
+    public function recalculate(
+        Request $request,
+        PrintFile $printFile,
+        PrintJob $printJob,
+        PrintFileAnalysisService $analysisService,
+        PrintJobPricingService $pricingService
+    ) {
+        $this->ensureFileOwnership($request, $printFile);
+        $this->ensureJobBelongsToFile($printFile, $printJob);
+        $this->ensureJobOwnership($request, $printJob);
+
+        abort_unless(
+            $printJob->isEditableByUser(),
+            422,
+            'Este trabajo de impresión no se puede recalcular en su estado actual.'
+        );
+
+        $job = DB::transaction(function () use ($printFile, $printJob, $analysisService, $pricingService) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                $lockedJob->isEditableByUser(),
+                422,
+                'Este trabajo de impresión no se puede recalcular en su estado actual.'
+            );
+
+            $lockedJob->load('material:id,material_type');
+
+            $analysis = $analysisService->analyze($printFile, [
+                'quantity' => $lockedJob->quantity,
+                'scale_percent' => $lockedJob->scale_percent,
+                'infill_percent' => $lockedJob->infill_percent,
+                'technology' => $lockedJob->technology,
+                'material_type' => $lockedJob->material?->material_type,
+            ]);
+
+            $lockedJob->fill([
+                'estimated_material_g' => $analysis['estimated_material_g'],
+                'estimated_time_min' => $analysis['estimated_time_min'],
+                'estimated_volume_cm3' => $analysis['estimated_volume_cm3'],
+                'analysis_source' => $analysis['analysis_source'],
+            ]);
+
+            $quote = $pricingService->quote($lockedJob, false);
+
+            $status = !empty($analysis['manual_review_required'])
+                ? PrintJobStatus::ReviewPending
+                : PrintJobStatus::Priced;
+
+            $lockedJob->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => array_merge(
+                    $quote['pricing_breakdown'],
+                    [
+                        'analysis_details' => $analysis['analysis'] ?? [],
+                        'manual_review_required' => (bool) ($analysis['manual_review_required'] ?? false),
+                        'review_reasons' => $analysis['review_reasons'] ?? [],
+                    ]
+                ),
+                'status' => $status,
+            ]);
+
+            $lockedJob->save();
+
+            return $lockedJob;
+        });
+
+        $job->load([
+            'material:id,name,slug,material_type',
+            'printFile:id,original_name,file_extension',
+        ]);
+
+        return ApiResponse::success(
+            data: $job,
+            message: 'PrintJob recalculado correctamente.'
+        );
+    }
+
+    public function continueWithoutReview(
+        Request $request,
+        PrintFile $printFile,
+        PrintJob $printJob,
+        PrintJobPricingService $pricingService
+    ) {
+        $this->ensureFileOwnership($request, $printFile);
+        $this->ensureJobBelongsToFile($printFile, $printJob);
+        $this->ensureJobOwnership($request, $printJob);
+
+        abort_unless(
+            ($printJob->status?->value ?? (string) $printJob->status) === PrintJobStatus::ReviewPending->value,
+            422,
+            'Este trabajo no está pendiente de revisión.'
+        );
+
+        $job = DB::transaction(function () use ($printJob, $pricingService) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                ($lockedJob->status?->value ?? (string) $lockedJob->status) === PrintJobStatus::ReviewPending->value,
+                422,
+                'Este trabajo no está pendiente de revisión.'
+            );
+
+            $quote = $pricingService->quote($lockedJob, true);
+
+            $breakdown = $quote['pricing_breakdown'];
+            $breakdown['continued_without_review'] = true;
+
+            $lockedJob->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => $breakdown,
+                'status' => PrintJobStatus::Priced,
+            ]);
+
+            $lockedJob->save();
+
+            return $lockedJob;
+        });
+
+        $job->load([
+            'material:id,name,slug,material_type',
+            'printFile:id,original_name,file_extension',
+        ]);
+
+        return ApiResponse::success(
+            data: $job,
+            message: 'PrintJob validado sin revisión manual.'
+        );
+    }
+
+    public function destroy(Request $request, PrintFile $printFile, PrintJob $printJob)
+    {
+        $this->ensureFileOwnership($request, $printFile);
+        $this->ensureJobBelongsToFile($printFile, $printJob);
+        $this->ensureJobOwnership($request, $printJob);
+
+        abort_unless(
+            $printJob->isDeletableByUser(),
+            422,
+            'Este trabajo de impresión no se puede eliminar en su estado actual.'
+        );
+
+        DB::transaction(function () use ($printJob) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                $lockedJob->isDeletableByUser(),
+                422,
+                'Este trabajo de impresión no se puede eliminar en su estado actual.'
+            );
+
+            $lockedJob->delete();
+        });
+
+        return ApiResponse::success(
+            data: null,
+            message: 'PrintJob eliminado correctamente.'
+        );
+    }
+
+    private function ensureFileOwnership(Request $request, PrintFile $printFile): void
+    {
+        abort_unless((int) $printFile->user_id === (int) $request->user()->id, 403);
+    }
+
+    private function ensureJobOwnership(Request $request, PrintJob $printJob): void
+    {
+        abort_unless((int) $printJob->user_id === (int) $request->user()->id, 403);
+    }
+
+    private function ensureJobBelongsToFile(PrintFile $printFile, PrintJob $printJob): void
+    {
+        abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
+    }
+}
+
+
+===== FILE: app/Http/Controllers/Api/ProductDesignController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Enums\ProductDesignStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreProductDesignRequest;
+use App\Http\Requests\UpdateProductDesignRequest;
+use App\Models\Product;
+use App\Models\ProductDesign;
+use App\Support\ApiResponse;
+use Illuminate\Http\Request;
+
+class ProductDesignController extends Controller
+{
+    public function index(Request $request)
+    {
+        $designs = ProductDesign::query()
+            ->ownedBy($request->user()->id)
+            ->with([
+                'product:id,name,slug,base_price',
+                'material:id,name,slug,material_type',
+            ])
+            ->orderByDesc('id')
+            ->paginate(15);
+
+        return ApiResponse::paginated($designs);
+    }
+
+    public function store(StoreProductDesignRequest $request)
+    {
+        $data = $request->validated();
+
+        /** @var \App\Models\Product $product */
+        $product = Product::query()->findOrFail($data['product_id']);
+        abort_unless($product->is_active, 422, 'El producto no está disponible.');
+
+        $design = ProductDesign::query()->create([
+            'user_id' => $request->user()->id,
+            'product_id' => $data['product_id'],
+            'material_id' => $data['material_id'],
+            'color_name' => $data['color_name'],
+            'size_eu' => $data['size_eu'],
+            'unit_price' => $product->base_price,
+            'pricing_breakdown' => [
+                'source' => 'product_base_price',
+                'product_base_price' => $product->base_price,
+                'notes' => 'Precio base inicial. Pendiente de lógica avanzada de personalización.',
+            ],
+            'status' => ProductDesignStatus::Draft,
+        ]);
+
+        $design->load([
+            'product:id,name,slug,base_price',
+            'material:id,name,slug,material_type',
+        ]);
+
+        return ApiResponse::created(
+            data: $design,
+            message: 'Diseño creado correctamente.'
+        );
+    }
+
+    public function show(Request $request, ProductDesign $productDesign)
+    {
+        $this->ensureOwnership($request, $productDesign);
+
+        $productDesign->load([
+            'product:id,name,slug,base_price',
+            'material:id,name,slug,material_type',
+        ]);
+
+        return ApiResponse::success($productDesign);
+    }
+
+    public function update(UpdateProductDesignRequest $request, ProductDesign $productDesign)
+    {
+        $this->ensureOwnership($request, $productDesign);
+        $this->ensureDraft($productDesign);
+
+        $data = $request->validated();
+
+        $productDesign->update($data);
+
+        $productDesign->refresh()->load([
+            'product:id,name,slug,base_price',
+            'material:id,name,slug,material_type',
+        ]);
+
+        return ApiResponse::success(
+            data: $productDesign,
+            message: 'Diseño actualizado correctamente.'
+        );
+    }
+
+    public function destroy(Request $request, ProductDesign $productDesign)
+    {
+        $this->ensureOwnership($request, $productDesign);
+        $this->ensureDraft($productDesign);
+
+        $productDesign->delete();
+
+        return ApiResponse::success(
+            data: null,
+            message: 'Diseño eliminado correctamente.'
+        );
+    }
+
+    private function ensureOwnership(Request $request, ProductDesign $productDesign): void
+    {
+        abort_unless((int) $productDesign->user_id === (int) $request->user()->id, 403);
+    }
+
+    private function ensureDraft(ProductDesign $productDesign): void
+    {
+        abort_unless(
+            $productDesign->isDraft(),
+            422,
+            'Este diseño ya no puede modificarse en su estado actual.'
+        );
+    }
+}
+
+
+===== FILE: app/Services/CartService.php =====
+[NO EXISTE]
+
+
+===== FILE: app/Services/OrderService.php =====
+[NO EXISTE]
+
+
+===== FILE: app/Services/CheckoutService.php =====
+[NO EXISTE]
+
+
+===== FILE: app/Services/PricingService.php =====
+[NO EXISTE]
+
+
+===== FILE: app/Http/Requests/StoreOrderRequest.php =====
+[NO EXISTE]
+
+
+===== FILE: app/Http/Requests/CheckoutRequest.php =====
+[NO EXISTE]
+
+
+===== FILE: routes/api.php =====
+<?php
+
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\Catalog\ProductConfiguratorController;
+use App\Http\Controllers\Api\Catalog\ProductController as CatalogProductController;
+use App\Http\Controllers\Api\Catalog\ProductVariantController as CatalogProductVariantController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PrintFileController as UserPrintFileController;
+use App\Http\Controllers\Api\PrintJobController as UserPrintJobController;
+use App\Http\Controllers\Api\PrintOptionsController;
+use App\Http\Controllers\Api\ProductDesignController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Support\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+// Auth (API / SPA)
+Route::middleware('guest')->group(function () {
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/token-login', [AuthController::class, 'tokenLogin']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/me', function (Request $request) {
+        return ApiResponse::success($request->user());
+    });
+
+    Route::patch('/me', [AuthController::class, 'updateMe']);
+});
+
+// Catálogo público (sin login)
+Route::prefix('catalog')->group(function () {
+    Route::get('/products', [CatalogProductController::class, 'index']);
+    Route::get('/products/{product}', [CatalogProductController::class, 'show']);
+
+    Route::get('/products/{product}/variants', [CatalogProductVariantController::class, 'index']);
+    Route::get('/products/{product}/variants/{variant}', [CatalogProductVariantController::class, 'show']);
+
+    Route::get('/products/{product}/configurator-options', [ProductConfiguratorController::class, 'options']);
+});
+
+// Zona autenticada
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/print-options', [PrintOptionsController::class, 'index']);
+
+    // PrintFiles del usuario
+    Route::get('/print-files', [UserPrintFileController::class, 'index']);
+    Route::post('/print-files', [UserPrintFileController::class, 'store']);
+    Route::get('/print-files/{printFile}', [UserPrintFileController::class, 'show']);
+    Route::get('/print-files/{printFile}/download', [UserPrintFileController::class, 'download']);
+    Route::delete('/print-files/{printFile}', [UserPrintFileController::class, 'destroy']);
+
+    Route::prefix('print-files/{printFile}/jobs')->group(function () {
+        Route::get('/', [UserPrintJobController::class, 'index']);
+        Route::post('/', [UserPrintJobController::class, 'store']);
+        Route::get('/{printJob}', [UserPrintJobController::class, 'show']);
+        Route::patch('/{printJob}', [UserPrintJobController::class, 'update']);
+        Route::post('/{printJob}/recalculate', [UserPrintJobController::class, 'recalculate']);
+        Route::post('/{printJob}/continue-without-review', [UserPrintJobController::class, 'continueWithoutReview']);
+        Route::delete('/{printJob}', [UserPrintJobController::class, 'destroy']);
+    });
+
+    // ProductDesigns del usuario
+    Route::prefix('product-designs')->group(function () {
+        Route::get('/', [ProductDesignController::class, 'index']);
+        Route::post('/', [ProductDesignController::class, 'store']);
+        Route::get('/{productDesign}', [ProductDesignController::class, 'show']);
+        Route::patch('/{productDesign}', [ProductDesignController::class, 'update']);
+        Route::delete('/{productDesign}', [ProductDesignController::class, 'destroy']);
+    });
+
+    // Carrito del usuario
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'show']);
+        Route::post('/product-variants/{variant}', [CartController::class, 'addProductVariant']);
+        Route::post('/product-designs/{productDesign}', [CartController::class, 'addProductDesign']);
+        Route::patch('/items/{cartItem}', [CartController::class, 'updateItemQuantity']);
+        Route::delete('/items/{cartItem}', [CartController::class, 'destroyItem']);
+        Route::post('/print-jobs/{printJob}', [CartController::class, 'addPrintJob']);
+    });
+
+    // Pedidos
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index']);
+        Route::get('/{order}', [OrderController::class, 'show']);
+        Route::post('/checkout', [OrderController::class, 'checkout']);
+    });
+});
+
+
+===== FILE: database/migrations =====
+----- MIGRATION: database/migrations/2025_12_14_085844_create_cart_items_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('cart_items', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('cart_id')
+                ->constrained('carts')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+
+            // Uno u otro (XOR) - lo garantizamos en la app
+            $table->foreignId('product_variant_id')
+                ->nullable()
+                ->constrained('product_variants')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('print_job_id')
+                ->nullable()
+                ->constrained('print_jobs')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->unsignedInteger('quantity')->default(1);
+
+            // Snapshot pricing del carrito
+            $table->decimal('unit_price', 10, 2);
+            $table->decimal('subtotal', 10, 2);
+
+            $table->json('metadata')->nullable();
+
+            $table->timestamps();
+
+            $table->index(['cart_id']);
+            $table->index(['product_variant_id']);
+            $table->index(['print_job_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('cart_items');
+    }
+};
+
+
+
+----- MIGRATION: database/migrations/2025_12_14_085106_create_print_jobs_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('print_jobs', function (Blueprint $table) {
+            $table->id();
+
+            // Propietario del job (redundancia útil para consultas y control)
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('print_file_id')
+                ->constrained('print_files')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('material_id')
+                ->constrained('materials')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            // Config
+            $table->string('technology')->default('fdm');
+            $table->string('color_name')->nullable();
+            $table->unsignedInteger('quantity')->default(1);
+
+            // Inputs de cálculo (estimaciones)
+            $table->decimal('estimated_material_g', 10, 2)->nullable();
+            $table->unsignedInteger('estimated_time_min')->nullable();
+
+            // Snapshot pricing
+            $table->decimal('unit_price', 10, 2);
+            $table->json('pricing_breakdown')->nullable();
+
+            // Estado (string + enum PHP)
+            $table->string('status')->default('draft'); // draft|in_cart|ordered|printing|shipped|completed|cancelled
+
+            $table->timestamps();
+            $table->softDeletes();
+
+            // Índices útiles
+            $table->index(['user_id', 'status']);
+            $table->index(['print_file_id']);
+            $table->index(['material_id']);
+            $table->index(['status']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('print_jobs');
+    }
+};
+
+
+
+----- MIGRATION: database/migrations/2025_12_27_175000_alter_print_jobs_for_pricing_flow.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('print_jobs', function (Blueprint $table) {
+            $table->decimal('unit_price', 10, 2)->nullable()->change();
+        });
+
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('print_jobs', function (Blueprint $table) {
+            $table->decimal('unit_price', 10, 2)->nullable(false)->change();
+        });
+    }
+};
+
+
+----- MIGRATION: database/migrations/2026_04_04_052706_add_product_design_id_to_cart_items_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->foreignId('product_design_id')
+                ->nullable()
+                ->after('product_variant_id')
+                ->constrained('product_designs')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
+
+            $table->index(['product_design_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('product_design_id');
+        });
+    }
+};
+
+
+----- MIGRATION: database/migrations/2026_04_05_045526_add_type_to_cart_items_table.php -----
+<?php
+
+use App\Enums\CartItemType;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->string('type')
+                ->nullable()
+                ->after('print_job_id');
+        });
+
+        DB::table('cart_items')
+            ->whereNotNull('product_variant_id')
+            ->update(['type' => CartItemType::ProductVariant->value]);
+
+        DB::table('cart_items')
+            ->whereNotNull('product_design_id')
+            ->update(['type' => CartItemType::ProductDesign->value]);
+
+        DB::table('cart_items')
+            ->whereNotNull('print_job_id')
+            ->update(['type' => CartItemType::PrintJob->value]);
+
+        DB::table('cart_items')
+            ->whereNull('type')
+            ->update(['type' => CartItemType::ProductVariant->value]);
+
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->string('type')->nullable(false)->change();
+            $table->index(['cart_id', 'type']);
+            $table->index(['type']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('cart_items', function (Blueprint $table) {
+            $table->dropIndex(['cart_id', 'type']);
+            $table->dropIndex(['type']);
+            $table->dropColumn('type');
+        });
+    }
+};
+
+
+----- MIGRATION: database/migrations/2026_04_04_052623_create_product_designs_table.php -----
+<?php
+
+use App\Enums\ProductDesignStatus;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('product_designs', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+
+            $table->foreignId('product_id')
+                ->constrained('products')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('material_id')
+                ->nullable()
+                ->constrained('materials')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
+
+            $table->string('color_name')->nullable();
+
+            $table->decimal('size_eu', 4, 1)->nullable();
+
+            $table->decimal('unit_price', 10, 2)->nullable();
+
+            $table->json('pricing_breakdown')->nullable();
+
+            $table->string('status')->default(ProductDesignStatus::Draft->value);
+
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['user_id', 'status']);
+            $table->index(['product_id', 'status']);
+            $table->index(['material_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('product_designs');
+    }
+};
+
+
+----- MIGRATION: database/migrations/2026_04_04_052754_add_product_design_id_to_order_items_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('order_items', function (Blueprint $table) {
+            $table->foreignId('product_design_id')
+                ->nullable()
+                ->after('product_variant_id')
+                ->constrained('product_designs')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
+
+            $table->index(['product_design_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('order_items', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('product_design_id');
+        });
+    }
+};
+
+
+----- MIGRATION: database/migrations/2025_12_14_085706_create_carts_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('carts', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+
+            // Enum PHP + string en BD
+            $table->string('status')->default('active');
+
+            $table->timestamps();
+
+            $table->index(['user_id', 'status']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('carts');
+    }
+};
+
+
+
+----- MIGRATION: database/migrations/2025_12_14_090054_create_order_items_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('order_items', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('order_id')
+                ->constrained('orders')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+
+            // Uno u otro (XOR) - lo garantizamos en la app
+            $table->foreignId('product_variant_id')
+                ->nullable()
+                ->constrained('product_variants')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('print_job_id')
+                ->nullable()
+                ->constrained('print_jobs')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            // Snapshot del item comprado
+            $table->string('item_name');
+
+            $table->decimal('unit_price', 10, 2);
+            $table->unsignedInteger('quantity')->default(1);
+            $table->decimal('subtotal', 10, 2);
+
+            $table->json('metadata')->nullable();
+
+            $table->timestamps();
+
+            $table->index(['order_id']);
+            $table->index(['product_variant_id']);
+            $table->index(['print_job_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('order_items');
+    }
+};
+
+
+
+----- MIGRATION: database/migrations/2025_12_14_090014_create_orders_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('shipping_address_id')
+                ->constrained('addresses')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->foreignId('billing_address_id')
+                ->nullable()
+                ->constrained('addresses')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            $table->string('order_number')->unique();
+
+            // Enum PHP + string en BD
+            $table->string('status')->default('pending');
+            $table->string('payment_status')->default('pending');
+
+            $table->string('payment_method')->nullable();
+
+            // Totales snapshot
+            $table->decimal('subtotal', 10, 2);
+            $table->decimal('tax', 10, 2)->default(0);
+            $table->decimal('shipping_cost', 10, 2)->default(0);
+            $table->decimal('total', 10, 2);
+
+            $table->dateTime('placed_at')->nullable();
+
+            $table->text('notes')->nullable();
+
+            $table->timestamps();
+
+            $table->index(['user_id', 'status']);
+            $table->index(['status']);
+            $table->index(['payment_status']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('orders');
+    }
+};
+
+
+
+----- MIGRATION: database/migrations/2026_04_05_090141_add_analysis_fields_to_print_jobs_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('print_jobs', function (Blueprint $table) {
+            $table->unsignedSmallInteger('infill_percent')
+                ->default(15)
+                ->after('quantity');
+
+            $table->unsignedSmallInteger('scale_percent')
+                ->default(100)
+                ->after('infill_percent');
+
+            $table->decimal('estimated_volume_cm3', 10, 2)
+                ->nullable()
+                ->after('estimated_time_min');
+
+            $table->string('analysis_source', 50)
+                ->nullable()
+                ->after('estimated_volume_cm3');
+
+            $table->index(['analysis_source']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('print_jobs', function (Blueprint $table) {
+            $table->dropIndex(['analysis_source']);
+            $table->dropColumn([
+                'infill_percent',
+                'scale_percent',
+                'estimated_volume_cm3',
+                'analysis_source',
+            ]);
+        });
+    }
+};
+
+
+----- MIGRATION: database/migrations/2025_12_23_152125_drop_status_index_from_print_jobs_table.php -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('print_jobs', function (Blueprint $table) {
+            $table->dropIndex(['status']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('print_jobs', function (Blueprint $table) {
+            $table->index(['status']);
+        });
+    }
+};
+
+
+
+

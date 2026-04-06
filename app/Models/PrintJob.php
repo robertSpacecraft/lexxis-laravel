@@ -65,4 +65,15 @@ class PrintJob extends Model
             PrintJobStatus::Priced->value,
         ], true);
     }
+
+    public function isDeletableByUser(): bool
+    {
+        $status = $this->status?->value ?? (string) $this->status;
+
+        return in_array($status, [
+            PrintJobStatus::Draft->value,
+            PrintJobStatus::Priced->value,
+            PrintJobStatus::ReviewPending->value,
+        ], true);
+    }
 }

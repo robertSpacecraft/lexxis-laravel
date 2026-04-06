@@ -38,5 +38,9 @@ class PrintFile extends Model
     {
         return $this->hasMany(PrintJob::class);
     }
-}
 
+    public function analysis()
+    {
+        return $this->hasOne(PrintFileAnalysis::class);
+    }
+}

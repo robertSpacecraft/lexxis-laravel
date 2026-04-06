@@ -355,6 +355,39 @@ class PrintJobController extends Controller
         );
     }
 
+    public function destroy(Request $request, PrintFile $printFile, PrintJob $printJob)
+    {
+        $this->ensureFileOwnership($request, $printFile);
+        $this->ensureJobBelongsToFile($printFile, $printJob);
+        $this->ensureJobOwnership($request, $printJob);
+
+        abort_unless(
+            $printJob->isDeletableByUser(),
+            422,
+            'Este trabajo de impresión no se puede eliminar en su estado actual.'
+        );
+
+        DB::transaction(function () use ($printJob) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless(
+                $lockedJob->isDeletableByUser(),
+                422,
+                'Este trabajo de impresión no se puede eliminar en su estado actual.'
+            );
+
+            $lockedJob->delete();
+        });
+
+        return ApiResponse::success(
+            data: null,
+            message: 'PrintJob eliminado correctamente.'
+        );
+    }
+
     private function ensureFileOwnership(Request $request, PrintFile $printFile): void
     {
         abort_unless((int) $printFile->user_id === (int) $request->user()->id, 403);

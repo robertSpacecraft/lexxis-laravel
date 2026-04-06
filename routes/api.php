@@ -7,12 +7,13 @@ use App\Http\Controllers\Api\Catalog\ProductController as CatalogProductControll
 use App\Http\Controllers\Api\Catalog\ProductVariantController as CatalogProductVariantController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PrintFileController as UserPrintFileController;
+use App\Http\Controllers\Api\PrintJobController as UserPrintJobController;
+use App\Http\Controllers\Api\PrintOptionsController;
 use App\Http\Controllers\Api\ProductDesignController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\PrintJobController as UserPrintJobController;
 
 // Auth (API / SPA)
 Route::middleware('guest')->group(function () {
@@ -44,11 +45,14 @@ Route::prefix('catalog')->group(function () {
 
 // Zona autenticada
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/print-options', [PrintOptionsController::class, 'index']);
+
     // PrintFiles del usuario
     Route::get('/print-files', [UserPrintFileController::class, 'index']);
     Route::post('/print-files', [UserPrintFileController::class, 'store']);
     Route::get('/print-files/{printFile}', [UserPrintFileController::class, 'show']);
     Route::get('/print-files/{printFile}/download', [UserPrintFileController::class, 'download']);
+    Route::delete('/print-files/{printFile}', [UserPrintFileController::class, 'destroy']);
 
     Route::prefix('print-files/{printFile}/jobs')->group(function () {
         Route::get('/', [UserPrintJobController::class, 'index']);
@@ -57,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{printJob}', [UserPrintJobController::class, 'update']);
         Route::post('/{printJob}/recalculate', [UserPrintJobController::class, 'recalculate']);
         Route::post('/{printJob}/continue-without-review', [UserPrintJobController::class, 'continueWithoutReview']);
+        Route::delete('/{printJob}', [UserPrintJobController::class, 'destroy']);
     });
 
     // ProductDesigns del usuario

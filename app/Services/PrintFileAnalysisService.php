@@ -3,12 +3,73 @@
 namespace App\Services;
 
 use App\Models\PrintFile;
+use App\Support\PrintJobOptions;
 use Illuminate\Support\Facades\Storage;
 use SimpleXMLElement;
 use ZipArchive;
 
 class PrintFileAnalysisService
 {
+    private const BASE_MATERIAL_MULTIPLIER = 1.15;
+    private const BASE_TIME_MULTIPLIER = 1.20;
+
+    public function analyzeBase(PrintFile $printFile): array
+    {
+        $analysis = $this->analyze($printFile, [
+            'quantity' => 1,
+            'scale_percent' => 100,
+            'infill_percent' => PrintJobOptions::DEFAULT_INFILL_PERCENT,
+            'technology' => PrintJobOptions::DEFAULT_TECHNOLOGY,
+            'material_type' => null,
+        ]);
+
+        $details = (array) ($analysis['analysis'] ?? []);
+
+        $estimatedMaterial = $analysis['estimated_material_g'] !== null
+            ? round((float) $analysis['estimated_material_g'] * self::BASE_MATERIAL_MULTIPLIER, 2)
+            : null;
+
+        $estimatedTime = $analysis['estimated_time_min'] !== null
+            ? (int) max(1, round((int) $analysis['estimated_time_min'] * self::BASE_TIME_MULTIPLIER))
+            : null;
+
+        $notes = array_values(array_unique(array_merge(
+            (array) ($details['notes'] ?? []),
+            [
+                'Estimación base del archivo calculada con supuestos conservadores.',
+                'Supuestos base: cantidad 1, escala 100%, relleno 15% y tecnología FDM.',
+                'Las estimaciones base de material y tiempo son orientativas y pueden variar al configurar el trabajo de impresión.',
+            ]
+        )));
+
+        $details['notes'] = $notes;
+        $details['base_assumptions'] = [
+            'quantity' => 1,
+            'scale_percent' => 100,
+            'infill_percent' => PrintJobOptions::DEFAULT_INFILL_PERCENT,
+            'technology' => PrintJobOptions::DEFAULT_TECHNOLOGY,
+            'material_type' => null,
+        ];
+        $details['base_estimation_multipliers'] = [
+            'material' => self::BASE_MATERIAL_MULTIPLIER,
+            'time' => self::BASE_TIME_MULTIPLIER,
+        ];
+
+        return [
+            'estimated_volume_cm3' => $analysis['estimated_volume_cm3'] !== null
+                ? round((float) $analysis['estimated_volume_cm3'], 2)
+                : null,
+            'estimated_material_g' => $estimatedMaterial,
+            'estimated_time_min' => $estimatedTime,
+            'dimensions_mm' => $details['dimensions_mm'] ?? null,
+            'triangle_count' => isset($details['triangle_count']) ? (int) $details['triangle_count'] : null,
+            'analysis_source' => $analysis['analysis_source'] ?? null,
+            'analysis_details' => $details,
+            'manual_review_required' => (bool) ($analysis['manual_review_required'] ?? false),
+            'review_reasons' => array_values(array_unique((array) ($analysis['review_reasons'] ?? []))),
+        ];
+    }
+
     public function analyze(PrintFile $printFile, array $options = []): array
     {
         $relativePath = $printFile->storage_path;
@@ -118,25 +179,46 @@ class PrintFileAnalysisService
         }
 
         $scaleFactor = $scalePercent / 100;
-        $volumeCm3PerUnit = round((float) $mesh['volume_cm3'] * ($scaleFactor ** 3), 2);
+
+        $volumeBase = $mesh['volume_cm3'] ?? null;
+        $volumeCm3PerUnit = $volumeBase !== null
+            ? round((float) $volumeBase * ($scaleFactor ** 3), 2)
+            : null;
+
         $fillFactor = $this->fillFactor($infillPercent);
         $density = $this->densityForMaterialType($materialType);
-        $materialGPerUnit = round($volumeCm3PerUnit * $density * $fillFactor, 2);
+
+        $materialGPerUnit = $volumeCm3PerUnit !== null
+            ? round($volumeCm3PerUnit * $density * $fillFactor, 2)
+            : null;
 
         $minutesPerCm3 = $this->minutesPerCm3($technology);
         $timeFactor = 0.55 + (($infillPercent / 100) * 0.75);
-        $timeMinPerUnit = (int) max(1, round($volumeCm3PerUnit * $minutesPerCm3 * $timeFactor));
 
-        $dimensionsMm = [
-            'x' => round(((float) $mesh['bbox']['x'] ?? 0) * $scaleFactor, 2),
-            'y' => round(((float) $mesh['bbox']['y'] ?? 0) * $scaleFactor, 2),
-            'z' => round(((float) $mesh['bbox']['z'] ?? 0) * $scaleFactor, 2),
-        ];
+        $timeMinPerUnit = $volumeCm3PerUnit !== null
+            ? (int) max(1, round($volumeCm3PerUnit * $minutesPerCm3 * $timeFactor))
+            : null;
+
+        $hasBbox = isset($mesh['bbox']['x'], $mesh['bbox']['y'], $mesh['bbox']['z']);
+
+        $dimensionsMm = $hasBbox
+            ? [
+                'x' => round((float) $mesh['bbox']['x'] * $scaleFactor, 2),
+                'y' => round((float) $mesh['bbox']['y'] * $scaleFactor, 2),
+                'z' => round((float) $mesh['bbox']['z'] * $scaleFactor, 2),
+            ]
+            : null;
 
         return [
-            'estimated_volume_cm3' => round($volumeCm3PerUnit * $quantity, 2),
-            'estimated_material_g' => round($materialGPerUnit * $quantity, 2),
-            'estimated_time_min' => (int) round($timeMinPerUnit * $quantity),
+            'estimated_volume_cm3' => $volumeCm3PerUnit !== null
+                ? round($volumeCm3PerUnit * $quantity, 2)
+                : null,
+            'estimated_material_g' => $materialGPerUnit !== null
+                ? round($materialGPerUnit * $quantity, 2)
+                : null,
+            'estimated_time_min' => $timeMinPerUnit !== null
+                ? (int) round($timeMinPerUnit * $quantity)
+                : null,
             'analysis_source' => "{$type}_geometry",
             'analysis' => [
                 'notes' => [
@@ -152,7 +234,7 @@ class PrintFileAnalysisService
                 'scale_percent' => $scalePercent,
                 'infill_percent' => $infillPercent,
                 'dimensions_mm' => $dimensionsMm,
-                'triangle_count' => (int) $mesh['triangles'],
+                'triangle_count' => isset($mesh['triangles']) ? (int) $mesh['triangles'] : null,
                 'material_density_g_cm3' => $density,
                 'fill_factor' => $fillFactor,
             ],
