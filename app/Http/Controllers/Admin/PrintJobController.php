@@ -9,10 +9,28 @@ use App\Http\Requests\UpdatePrintJobRequest;
 use App\Models\Material;
 use App\Models\PrintFile;
 use App\Models\PrintJob;
+use App\Services\PrintFileAnalysisService;
+use App\Services\PrintJobPricingService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PrintJobController extends Controller
 {
-    // GET /admin/print-files/{printFile}/jobs
+    public function reviewPending(Request $request)
+    {
+        $printJobs = PrintJob::query()
+            ->where('status', PrintJobStatus::ReviewPending->value)
+            ->with([
+                'material:id,name',
+                'printFile:id,original_name,user_id',
+                'user:id,name,last_name,email',
+            ])
+            ->latest('id')
+            ->paginate(20);
+
+        return view('admin.print-files.jobs.review-pending', compact('printJobs'));
+    }
+
     public function index(PrintFile $printFile)
     {
         $printJobs = $printFile->printJobs()
@@ -23,7 +41,6 @@ class PrintJobController extends Controller
         return view('admin.print-files.jobs.index', compact('printFile', 'printJobs'));
     }
 
-    // GET /admin/print-files/{printFile}/jobs/create
     public function create(PrintFile $printFile)
     {
         $materials = Material::query()
@@ -35,27 +52,70 @@ class PrintJobController extends Controller
         return view('admin.print-files.jobs.create', compact('printFile', 'materials'));
     }
 
-    // POST /admin/print-files/{printFile}/jobs
-    public function store(StorePrintJobRequest $request, PrintFile $printFile)
-    {
+    public function store(
+        StorePrintJobRequest $request,
+        PrintFile $printFile,
+        PrintFileAnalysisService $analysisService,
+        PrintJobPricingService $pricingService
+    ) {
         $data = $request->validated();
-
-        // Fuente de verdad: ruta anidada
         $data['print_file_id'] = $printFile->id;
-
-        // El job pertenece al propietario del archivo (no editable desde el formulario)
         $data['user_id'] = $printFile->user_id;
-
         $data['status'] = PrintJobStatus::Draft;
 
-        $printJob = PrintJob::create($data);
+        $printJob = DB::transaction(function () use ($data, $printFile, $analysisService, $pricingService) {
+            $printJob = PrintJob::create($data);
+
+            $printJob->load('material:id,material_type');
+
+            $analysis = $analysisService->analyze($printFile, [
+                'quantity' => $printJob->quantity,
+                'scale_percent' => $printJob->scale_percent,
+                'infill_percent' => $printJob->infill_percent,
+                'technology' => $printJob->technology,
+                'material_type' => $printJob->material?->material_type,
+            ]);
+
+            $printJob->fill([
+                'estimated_material_g' => $analysis['estimated_material_g'],
+                'estimated_time_min' => $analysis['estimated_time_min'],
+                'estimated_volume_cm3' => $analysis['estimated_volume_cm3'],
+                'analysis_source' => $analysis['analysis_source'],
+            ]);
+
+            $quote = $pricingService->quote($printJob, false);
+
+            $status = !empty($analysis['manual_review_required'])
+                ? PrintJobStatus::ReviewPending
+                : PrintJobStatus::Priced;
+
+            $printJob->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => array_merge(
+                    $quote['pricing_breakdown'],
+                    [
+                        'analysis_details' => $analysis['analysis'] ?? [],
+                        'manual_review_required' => (bool) ($analysis['manual_review_required'] ?? false),
+                        'review_reasons' => $analysis['review_reasons'] ?? [],
+                    ]
+                ),
+                'status' => $status,
+            ]);
+
+            $printJob->save();
+
+            return $printJob;
+        });
 
         return redirect()
             ->route('admin.print-files.jobs.show', [$printFile, $printJob])
             ->with('success', 'PrintJob creado correctamente.');
     }
 
-    // GET /admin/print-files/{printFile}/jobs/{printJob}
     public function show(PrintFile $printFile, PrintJob $printJob)
     {
         abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
@@ -68,14 +128,17 @@ class PrintJobController extends Controller
         return view('admin.print-files.jobs.show', compact('printFile', 'printJob'));
     }
 
-    // GET /admin/print-files/{printFile}/jobs/{printJob}/edit
     public function edit(PrintFile $printFile, PrintJob $printJob)
     {
         abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
 
         $status = $printJob->status?->value ?? (string) $printJob->status;
 
-        if ($status !== 'draft') {
+        if (!in_array($status, [
+            PrintJobStatus::Draft->value,
+            PrintJobStatus::Priced->value,
+            PrintJobStatus::ReviewPending->value,
+        ], true)) {
             return redirect()
                 ->route('admin.print-files.jobs.show', [$printFile, $printJob])
                 ->with('error', 'Este PrintJob no se puede editar en su estado actual.');
@@ -90,33 +153,130 @@ class PrintJobController extends Controller
         return view('admin.print-files.jobs.edit', compact('printFile', 'printJob', 'materials'));
     }
 
-    // PUT /admin/print-files/{printFile}/jobs/{printJob}
-    public function update(UpdatePrintJobRequest $request, PrintFile $printFile, PrintJob $printJob)
-    {
+    public function update(
+        UpdatePrintJobRequest $request,
+        PrintFile $printFile,
+        PrintJob $printJob,
+        PrintFileAnalysisService $analysisService,
+        PrintJobPricingService $pricingService
+    ) {
         abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
 
         $status = $printJob->status?->value ?? (string) $printJob->status;
 
-        if ($status !== 'draft') {
+        if (!in_array($status, [
+            PrintJobStatus::Draft->value,
+            PrintJobStatus::Priced->value,
+            PrintJobStatus::ReviewPending->value,
+        ], true)) {
             return redirect()
                 ->route('admin.print-files.jobs.show', [$printFile, $printJob])
-                ->with('error', 'Este PrintJob no se puede actualizar en su estado actual (ya está en el carrito).');
+                ->with('error', 'Este PrintJob no se puede actualizar en su estado actual.');
         }
 
+        $printJob = DB::transaction(function () use ($request, $printFile, $printJob, $analysisService, $pricingService) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $data = $request->validated();
+            $data = $request->validated();
+            unset($data['print_file_id'], $data['user_id']);
 
-        //Blindaje: estos campos no se reasignan desde update
-        unset($data['print_file_id'], $data['user_id']);
+            $lockedJob->fill($data);
+            $lockedJob->load('material:id,material_type');
 
-        $printJob->update($data);
+            $analysis = $analysisService->analyze($printFile, [
+                'quantity' => $lockedJob->quantity,
+                'scale_percent' => $lockedJob->scale_percent,
+                'infill_percent' => $lockedJob->infill_percent,
+                'technology' => $lockedJob->technology,
+                'material_type' => $lockedJob->material?->material_type,
+            ]);
+
+            $lockedJob->fill([
+                'estimated_material_g' => $analysis['estimated_material_g'],
+                'estimated_time_min' => $analysis['estimated_time_min'],
+                'estimated_volume_cm3' => $analysis['estimated_volume_cm3'],
+                'analysis_source' => $analysis['analysis_source'],
+            ]);
+
+            $quote = $pricingService->quote($lockedJob, false);
+
+            $newStatus = !empty($analysis['manual_review_required'])
+                ? PrintJobStatus::ReviewPending
+                : PrintJobStatus::Priced;
+
+            $lockedJob->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => array_merge(
+                    $quote['pricing_breakdown'],
+                    [
+                        'analysis_details' => $analysis['analysis'] ?? [],
+                        'manual_review_required' => (bool) ($analysis['manual_review_required'] ?? false),
+                        'review_reasons' => $analysis['review_reasons'] ?? [],
+                    ]
+                ),
+                'status' => $newStatus,
+            ]);
+
+            $lockedJob->save();
+
+            return $lockedJob;
+        });
 
         return redirect()
             ->route('admin.print-files.jobs.show', [$printFile, $printJob])
             ->with('success', 'PrintJob actualizado correctamente.');
     }
 
-    // DELETE /admin/print-files/{printFile}/jobs/{printJob}
+    public function approveReview(
+        PrintFile $printFile,
+        PrintJob $printJob,
+        PrintJobPricingService $pricingService
+    ) {
+        abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);
+
+        abort_unless(
+            ($printJob->status?->value ?? (string) $printJob->status) === PrintJobStatus::ReviewPending->value,
+            422
+        );
+
+        DB::transaction(function () use ($printJob, $pricingService) {
+            $lockedJob = PrintJob::query()
+                ->whereKey($printJob->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $quote = $pricingService->quote($lockedJob, false);
+
+            $breakdown = $quote['pricing_breakdown'];
+            $breakdown['approved_by_admin'] = true;
+            $breakdown['manual_review_required'] = false;
+            $breakdown['review_reasons'] = [];
+
+            $lockedJob->fill([
+                'estimated_material_g' => $quote['estimated_material_g'],
+                'estimated_time_min' => $quote['estimated_time_min'],
+                'estimated_volume_cm3' => $quote['estimated_volume_cm3'],
+                'analysis_source' => $quote['analysis_source'],
+                'unit_price' => $quote['unit_price'],
+                'pricing_breakdown' => $breakdown,
+                'status' => PrintJobStatus::Priced,
+            ]);
+
+            $lockedJob->save();
+        });
+
+        return redirect()
+            ->route('admin.print-files.jobs.show', [$printFile, $printJob])
+            ->with('success', 'PrintJob validado correctamente.');
+    }
+
     public function destroy(PrintFile $printFile, PrintJob $printJob)
     {
         abort_unless((int) $printJob->print_file_id === (int) $printFile->id, 404);

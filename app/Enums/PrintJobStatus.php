@@ -5,6 +5,7 @@ namespace App\Enums;
 enum PrintJobStatus: string
 {
     case Draft = 'draft';
+    case ReviewPending = 'review_pending';
     case Priced = 'priced';
     case InCart = 'in_cart';
     case Ordered = 'ordered';
@@ -13,7 +14,8 @@ enum PrintJobStatus: string
     case Cancelled = 'cancelled';
     case Completed = 'completed';
 
-    public static function values(): array {
+    public static function values(): array
+    {
         return array_map(fn(self $c) => $c->value, self::cases());
     }
 }

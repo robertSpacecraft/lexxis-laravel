@@ -73,6 +73,39 @@
                 @enderror
             </div>
 
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    Relleno (%)
+                </label>
+                <select name="infill_percent"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    @foreach([5, 15, 40] as $infill)
+                        <option value="{{ $infill }}"
+                            @selected((int) old('infill_percent', 15) === $infill)>
+                            {{ $infill }}%
+                        </option>
+                    @endforeach
+                </select>
+                @error('infill_percent')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    Escala (%)
+                </label>
+                <input type="number"
+                       name="scale_percent"
+                       min="10"
+                       max="300"
+                       value="{{ old('scale_percent', 100) }}"
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                @error('scale_percent')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="flex items-center gap-4">
                 <button type="submit"
                         class="px-4 py-2 bg-gray-900 text-green-600 text-sm rounded hover:bg-gray-700">

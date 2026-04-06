@@ -115,6 +115,10 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/print-files/{printFile}', [PrintFileController::class, 'destroy'])
             ->name('print-files.destroy');
 
+        // Revisión manual de PrintJobs
+        Route::get('/print-jobs/review-pending', [PrintJobController::class, 'reviewPending'])
+            ->name('print-jobs.review-pending');
+
         // CRUD de PrintJobs
         Route::get('/print-files/{printFile}/jobs', [PrintJobController::class, 'index'])
             ->name('print-files.jobs.index');
@@ -128,6 +132,8 @@ Route::middleware(['auth', 'admin'])
             ->name('print-files.jobs.edit');
         Route::put('/print-files/{printFile}/jobs/{printJob}', [PrintJobController::class, 'update'])
             ->name('print-files.jobs.update');
+        Route::post('/print-files/{printFile}/jobs/{printJob}/approve-review', [PrintJobController::class, 'approveReview'])
+            ->name('print-files.jobs.approve-review');
         Route::delete('/print-files/{printFile}/jobs/{printJob}', [PrintJobController::class, 'destroy'])
             ->name('print-files.jobs.destroy');
 

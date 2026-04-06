@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\PrintJobController as UserPrintJobController;
 
 // Auth (API / SPA)
 Route::middleware('guest')->group(function () {
@@ -48,6 +49,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/print-files', [UserPrintFileController::class, 'store']);
     Route::get('/print-files/{printFile}', [UserPrintFileController::class, 'show']);
     Route::get('/print-files/{printFile}/download', [UserPrintFileController::class, 'download']);
+
+    Route::prefix('print-files/{printFile}/jobs')->group(function () {
+        Route::get('/', [UserPrintJobController::class, 'index']);
+        Route::post('/', [UserPrintJobController::class, 'store']);
+        Route::get('/{printJob}', [UserPrintJobController::class, 'show']);
+        Route::patch('/{printJob}', [UserPrintJobController::class, 'update']);
+        Route::post('/{printJob}/recalculate', [UserPrintJobController::class, 'recalculate']);
+        Route::post('/{printJob}/continue-without-review', [UserPrintJobController::class, 'continueWithoutReview']);
+    });
 
     // ProductDesigns del usuario
     Route::prefix('product-designs')->group(function () {

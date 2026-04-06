@@ -22,6 +22,18 @@
                 Editar
             </a>
 
+            @if($printJob->status->value === 'review_pending')
+                <form method="POST"
+                      action="{{ route('admin.print-files.jobs.approve-review', [$printFile, $printJob]) }}"
+                      onsubmit="return confirm('¿Aprobar la revisión manual de este trabajo?')"
+                      class="inline">
+                    @csrf
+                    <button type="submit" class="text-sm text-green-700 underline">
+                        Aprobar revisión
+                    </button>
+                </form>
+            @endif
+
             <form method="POST"
                   action="{{ route('admin.print-files.jobs.destroy', [$printFile, $printJob]) }}"
                   onsubmit="return confirm('¿Eliminar este job?')"
@@ -35,6 +47,18 @@
         </div>
     </div>
 
+    @if (session('success'))
+        <div class="mt-4 p-3 rounded-md bg-green-50 border border-green-200 text-green-800 text-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mt-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-800 text-sm">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="mt-6 bg-white border rounded-lg overflow-hidden">
         <div class="px-6 py-5 border-b bg-gray-50">
             <h2 class="text-sm font-semibold text-gray-700">Información</h2>
@@ -46,7 +70,8 @@
                 <dd class="mt-1">
                     <span class="inline-flex px-2 py-1 rounded text-xs
                         @if($printJob->status->value === 'draft') bg-gray-100 text-gray-700
-                        @elseif($printJob->status->value === 'priced') bg-gray-100 text-gray-700
+                        @elseif($printJob->status->value === 'review_pending') bg-orange-100 text-orange-700
+                        @elseif($printJob->status->value === 'priced') bg-emerald-100 text-emerald-700
                         @elseif($printJob->status->value === 'in_cart') bg-yellow-100 text-yellow-700
                         @elseif($printJob->status->value === 'ordered') bg-blue-100 text-blue-700
                         @elseif($printJob->status->value === 'printing') bg-purple-100 text-purple-700
@@ -83,6 +108,21 @@
             </div>
 
             <div>
+                <dt class="text-gray-900">Relleno</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->infill_percent ?? '—' }}%</dd>
+            </div>
+
+            <div>
+                <dt class="text-gray-900">Escala</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->scale_percent ?? '—' }}%</dd>
+            </div>
+
+            <div>
+                <dt class="text-gray-900">Fuente de análisis</dt>
+                <dd class="mt-1 text-gray-500">{{ $printJob->analysis_source ?? '—' }}</dd>
+            </div>
+
+            <div>
                 <dt class="text-gray-900">Precio unitario</dt>
                 <dd class="mt-1 text-gray-500">
                     @if(is_null($printJob->unit_price))
@@ -116,6 +156,17 @@
             </div>
 
             <div>
+                <dt class="text-gray-900">Volumen estimado (cm³)</dt>
+                <dd class="mt-1 text-gray-500">
+                    @if(is_null($printJob->estimated_volume_cm3))
+                        <span class="text-gray-500">No disponible</span>
+                    @else
+                        {{ $printJob->estimated_volume_cm3 }}
+                    @endif
+                </dd>
+            </div>
+
+            <div>
                 <dt class="text-gray-900">Creado</dt>
                 <dd class="mt-1 text-gray-500">{{ $printJob->created_at->format('d/m/Y H:i') }}</dd>
             </div>
@@ -126,29 +177,69 @@
             </div>
         </dl>
 
-        {{-- Este botón (solo-Admin) simula disparar el pricing real del printJob, lo añade al carrito del
-         propietario y permite validar el flujo end-to-end sin frontend--}}
+        @php
+            $reviewReasons = data_get($printJob->pricing_breakdown, 'review_reasons', []);
+            $manualReviewRequired = (bool) data_get($printJob->pricing_breakdown, 'manual_review_required', false);
+            $continuedWithoutReview = (bool) data_get($printJob->pricing_breakdown, 'continued_without_review', false);
+            $approvedByAdmin = (bool) data_get($printJob->pricing_breakdown, 'approved_by_admin', false);
+        @endphp
 
-        @if(
-    in_array($printJob->status->value, ['draft', 'priced'], true)
-    )
+        @if($manualReviewRequired || $printJob->status->value === 'review_pending')
+            <div class="px-6 py-5 border-t bg-orange-50">
+                <h3 class="text-sm font-semibold text-orange-800">Revisión manual requerida</h3>
+
+                @if(!empty($reviewReasons))
+                    <ul class="mt-2 list-disc pl-5 text-sm text-orange-800 space-y-1">
+                        @foreach($reviewReasons as $reason)
+                            <li>{{ $reason }}</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="mt-2 text-sm text-orange-800">
+                        Este trabajo requiere validación manual antes de quedar listo para compra.
+                    </p>
+                @endif
+            </div>
+        @endif
+
+        @if($continuedWithoutReview)
+            <div class="px-6 py-5 border-t bg-yellow-50">
+                <p class="text-sm text-yellow-800">
+                    Este trabajo se validó sin revisión manual y se aplicó un incremento extra de riesgo en el pricing.
+                </p>
+            </div>
+        @endif
+
+        @if($approvedByAdmin)
+            <div class="px-6 py-5 border-t bg-green-50">
+                <p class="text-sm text-green-800">
+                    Este trabajo ha sido validado manualmente por administración.
+                </p>
+            </div>
+        @endif
+
+        @if(in_array($printJob->status->value, ['draft', 'priced', 'review_pending'], true))
             <div class="px-6 py-5 border-t bg-gray-50">
                 <form method="POST"
                       action="{{ route('admin.users.cart.items.print-jobs.store', [$printJob->user_id, $printJob]) }}">
                     @csrf
 
                     <button type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-red-500">
-                        Añadir al carrito (calcular precio)
+                            class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-red-500"
+                        @disabled($printJob->status->value === 'review_pending')>
+                        Añadir al carrito
                     </button>
 
                     <p class="mt-2 text-xs text-gray-500">
-                        El precio se calculará automáticamente antes de añadir el trabajo al carrito.
+                        @if($printJob->status->value === 'review_pending')
+                            No se puede añadir al carrito mientras esté pendiente de revisión manual.
+                        @else
+                            El trabajo ya tiene pricing y está listo para flujo de compra.
+                        @endif
                     </p>
                 </form>
             </div>
         @endif
-
 
         <div class="px-6 py-5 border-t">
             <h3 class="text-sm font-semibold text-gray-700">Pricing breakdown</h3>

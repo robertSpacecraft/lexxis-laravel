@@ -49,5 +49,13 @@
                 Supervisa archivos de impresión y sus trabajos asociados.
             </p>
         </a>
+
+        <a href="{{ route('admin.print-jobs.review-pending') }}"
+           class="bg-white shadow-sm rounded-lg p-6 border hover:border-gray-400 transition">
+            <h2 class="text-lg font-semibold text-gray-900">Pendientes de revisión</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Valida manualmente trabajos de impresión que no han podido valorarse con suficiente fiabilidad.
+            </p>
+        </a>
     </div>
 @endsection

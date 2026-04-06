@@ -15,6 +15,8 @@ class PricingSetting extends Model
         'material_multiplier',
         'time_multiplier',
         'margin_multiplier',
+        'risk_multiplier',
+        'unreviewed_risk_multiplier',
         'infill_multipliers',
     ];
 
@@ -26,6 +28,8 @@ class PricingSetting extends Model
         'material_multiplier' => 'decimal:2',
         'time_multiplier' => 'decimal:2',
         'margin_multiplier' => 'decimal:2',
+        'risk_multiplier' => 'decimal:2',
+        'unreviewed_risk_multiplier' => 'decimal:2',
         'infill_multipliers' => 'array',
     ];
 

@@ -15,6 +15,16 @@
                 Volver
             </a>
 
+            <a href="{{ route('admin.print-files.jobs.index', $printFile) }}"
+               class="text-sm text-gray-700 underline">
+                Ver jobs
+            </a>
+
+            <a href="{{ route('admin.print-files.jobs.create', $printFile) }}"
+               class="px-4 py-2 bg-gray-900 text-green-600 text-sm rounded hover:bg-gray-700">
+                Crear job
+            </a>
+
             <a href="{{ route('admin.print-files.download', $printFile) }}"
                class="px-4 py-2 bg-gray-900 text-green-600 text-sm rounded hover:bg-gray-700">
                 Descargar
@@ -24,6 +34,7 @@
                class="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50">
                 Editar
             </a>
+
             <form method="POST"
                   action="{{ route('admin.print-files.destroy', $printFile) }}"
                   onsubmit="return confirm('¿Seguro que quieres eliminar este archivo? Se borrará también del almacenamiento.')">
@@ -34,9 +45,20 @@
                     Eliminar
                 </button>
             </form>
-
         </div>
     </div>
+
+    @if (session('success'))
+        <div class="mt-4 p-3 rounded-md bg-green-50 border border-green-200 text-green-800 text-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mt-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-800 text-sm">
+            {{ session('error') }}
+        </div>
+    @endif
 
     <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border rounded-lg p-6">
