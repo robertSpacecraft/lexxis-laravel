@@ -29,7 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->group('api', [
-            EnsureFrontendRequestsAreStateful::class,
+            // EnsureFrontendRequestsAreStateful::class,
+            // Comentado: este middleware activa el modo SPA stateful (cookies + CSRF) de Sanctum.
+            // Nuestro frontend usa autenticación por token (Bearer), no por sesión,
+            // por lo que este middleware provoca errores 419 (CSRF) en endpoints como /api/token-login.
+            // Si en el futuro se usa un frontend SPA con cookies, se puede reactivar.
+
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ]);
     })
