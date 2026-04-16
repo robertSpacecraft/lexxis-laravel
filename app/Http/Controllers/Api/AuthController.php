@@ -4,14 +4,53 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use App\Support\ApiResponse;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function register(RegisterRequest $request)
+    {
+        $data = $request->validated();
+
+        $user = User::create([
+            'name' => $data['name'],
+            'last_name' => $data['last_name'],
+            'phone' => $data['phone'] ?? null,
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            // role e is_active quedan resueltos por defaults/modelo
+        ]);
+
+        event(new Registered($user));
+
+        $user->tokens()->delete();
+
+        $token = $user->createToken('customer-register-token')->plainTextToken;
+
+        return ApiResponse::created(
+            data: [
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'role' => $user->role?->value,
+                    'is_active' => (bool) $user->is_active,
+                ],
+            ],
+            message: 'Registro correcto'
+        );
+    }
+
     public function login(LoginRequest $request)
     {
         $request->authenticate();

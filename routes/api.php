@@ -10,14 +10,13 @@ use App\Http\Controllers\Api\PrintFileController as UserPrintFileController;
 use App\Http\Controllers\Api\PrintJobController as UserPrintJobController;
 use App\Http\Controllers\Api\PrintOptionsController;
 use App\Http\Controllers\Api\ProductDesignController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Auth (API / SPA)
 Route::middleware('guest')->group(function () {
-    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/token-login', [AuthController::class, 'tokenLogin']);
 });
