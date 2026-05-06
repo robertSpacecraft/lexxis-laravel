@@ -46,6 +46,9 @@ Route::prefix('catalog')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/print-options', [PrintOptionsController::class, 'index']);
 
+    // PrintJobs del usuario autenticado
+    Route::get('/print-jobs', [UserPrintJobController::class, 'userIndex']);
+
     // PrintFiles del usuario
     Route::get('/print-files', [UserPrintFileController::class, 'index']);
     Route::post('/print-files', [UserPrintFileController::class, 'store']);

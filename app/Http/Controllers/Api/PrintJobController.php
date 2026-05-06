@@ -16,6 +16,25 @@ use Illuminate\Support\Facades\DB;
 
 class PrintJobController extends Controller
 {
+    public function userIndex(Request $request)
+    {
+        $perPage = max(1, min((int) $request->integer('per_page', 15), 50));
+
+        $jobs = PrintJob::query()
+            ->where('user_id', $request->user()->id)
+            ->whereHas('printFile', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            })
+            ->with([
+                'material:id,name,slug,material_type',
+                'printFile:id,original_name,file_extension',
+            ])
+            ->latest('id')
+            ->paginate($perPage);
+
+        return ApiResponse::paginated($jobs);
+    }
+
     public function index(Request $request, PrintFile $printFile)
     {
         $this->ensureFileOwnership($request, $printFile);
