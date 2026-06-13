@@ -11,6 +11,8 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -64,10 +66,18 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $token = $request->user()?->currentAccessToken();
+
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
+
         Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return ApiResponse::success(
             data: null,
@@ -82,9 +92,27 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        $throttleKey = $this->tokenLoginThrottleKey($request, $data['email']);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return ApiResponse::error(
+                message: "Demasiados intentos. Inténtalo de nuevo en {$seconds} segundos.",
+                errors: [
+                    'email' => [
+                        "Demasiados intentos. Inténtalo de nuevo en {$seconds} segundos.",
+                    ],
+                ],
+                status: 429
+            );
+        }
+
         $user = User::where('email', $data['email'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
+            RateLimiter::hit($throttleKey, 60);
+
             return ApiResponse::error(
                 message: 'Credenciales incorrectas',
                 status: 401
@@ -92,11 +120,15 @@ class AuthController extends Controller
         }
 
         if (!$user->is_active) {
+            RateLimiter::hit($throttleKey, 60);
+
             return ApiResponse::error(
                 message: 'Usuario inactivo',
                 status: 403
             );
         }
+
+        RateLimiter::clear($throttleKey);
 
         $user->tokens()->delete();
 
@@ -115,6 +147,11 @@ class AuthController extends Controller
             ],
             message: 'Login correcto'
         );
+    }
+
+    private function tokenLoginThrottleKey(Request $request, string $email): string
+    {
+        return 'token-login:' . Str::lower($email) . '|' . $request->ip();
     }
 
     public function updateMe(Request $request)

@@ -13,25 +13,47 @@ class DemoProductDesignsSeeder extends Seeder
 {
     public function run(): void
     {
-        $demoUser = User::query()->where('email', 'demo@lexxis.test')->first();
-        $secondUser = User::query()->where('email', 'maria@lexxis.test')->first();
+        $users = User::query()
+            ->whereIn('email', [
+                'demo@lexxis.test',
+                'maria@lexxis.test',
+                'carlos@lexxis.test',
+                'lucia@lexxis.test',
+            ])
+            ->get()
+            ->keyBy('email');
 
-        $flow = Product::query()->where('slug', 'lexxis-flow')->first();
-        $urban = Product::query()->where('slug', 'lexxis-urban')->first();
+        $products = Product::query()
+            ->whereIn('slug', [
+                'lexxis-flow',
+                'lexxis-urban',
+                'lexxis-future',
+                'lexxis-summer',
+                'lexxis-xport',
+                'lexxis-mocca',
+            ])
+            ->get()
+            ->keyBy('slug');
 
-        $tpu95 = Material::query()->where('slug', 'tpu-flex-95a')->first();
-        $tpu90 = Material::query()->where('slug', 'tpu-comfort-90a')->first();
+        $materials = Material::query()
+            ->whereIn('slug', [
+                'tpu-flex-95a',
+                'tpu-comfort-90a',
+                'pla-display',
+            ])
+            ->get()
+            ->keyBy('slug');
 
-        if (!$demoUser || !$flow || !$urban || !$tpu95 || !$tpu90) {
+        if ($users->isEmpty() || $products->isEmpty() || $materials->isEmpty()) {
             $this->command?->warn('Faltan usuarios, productos o materiales para sembrar diseños demo.');
             return;
         }
 
         $designs = [
             [
-                'user_id' => $demoUser->id,
-                'product_id' => $flow->id,
-                'material_id' => $tpu95->id,
+                'email' => 'demo@lexxis.test',
+                'product_slug' => 'lexxis-flow',
+                'material_slug' => 'tpu-flex-95a',
                 'color_name' => 'Negro',
                 'size_eu' => 42.0,
                 'unit_price' => 89.90,
@@ -44,9 +66,9 @@ class DemoProductDesignsSeeder extends Seeder
                 'status' => ProductDesignStatus::Draft,
             ],
             [
-                'user_id' => $demoUser->id,
-                'product_id' => $urban->id,
-                'material_id' => $tpu90->id,
+                'email' => 'demo@lexxis.test',
+                'product_slug' => 'lexxis-urban',
+                'material_slug' => 'tpu-comfort-90a',
                 'color_name' => 'Arena',
                 'size_eu' => 43.0,
                 'unit_price' => 104.90,
@@ -58,13 +80,10 @@ class DemoProductDesignsSeeder extends Seeder
                 ],
                 'status' => ProductDesignStatus::InCart,
             ],
-        ];
-
-        if ($secondUser) {
-            $designs[] = [
-                'user_id' => $secondUser->id,
-                'product_id' => $flow->id,
-                'material_id' => $tpu90->id,
+            [
+                'email' => 'maria@lexxis.test',
+                'product_slug' => 'lexxis-flow',
+                'material_slug' => 'tpu-comfort-90a',
                 'color_name' => 'Azul',
                 'size_eu' => 40.0,
                 'unit_price' => 94.90,
@@ -75,19 +94,67 @@ class DemoProductDesignsSeeder extends Seeder
                     'size_adjustment' => 0.00,
                 ],
                 'status' => ProductDesignStatus::Ordered,
-            ];
-        }
+            ],
+            [
+                'email' => 'carlos@lexxis.test',
+                'product_slug' => 'lexxis-xport',
+                'material_slug' => 'tpu-flex-95a',
+                'color_name' => 'Rojo',
+                'size_eu' => 44.0,
+                'unit_price' => 114.90,
+                'pricing_breakdown' => [
+                    'source' => 'demo_seed',
+                    'product_base_price' => 109.90,
+                    'material_adjustment' => 5.00,
+                    'size_adjustment' => 0.00,
+                ],
+                'status' => ProductDesignStatus::Draft,
+            ],
+            [
+                'email' => 'lucia@lexxis.test',
+                'product_slug' => 'lexxis-summer',
+                'material_slug' => 'tpu-comfort-90a',
+                'color_name' => 'Blanco',
+                'size_eu' => 38.0,
+                'unit_price' => 89.90,
+                'pricing_breakdown' => [
+                    'source' => 'demo_seed',
+                    'product_base_price' => 84.90,
+                    'material_adjustment' => 5.00,
+                    'size_adjustment' => 0.00,
+                ],
+                'status' => ProductDesignStatus::Archived,
+            ],
+        ];
 
         foreach ($designs as $payload) {
+            $user = $users->get($payload['email']);
+            $product = $products->get($payload['product_slug']);
+            $material = $materials->get($payload['material_slug']);
+
+            if (!$user || !$product || !$material) {
+                $this->command?->warn('Se omite diseño demo por faltar usuario, producto o material.');
+                continue;
+            }
+
             ProductDesign::updateOrCreate(
                 [
-                    'user_id' => $payload['user_id'],
-                    'product_id' => $payload['product_id'],
-                    'material_id' => $payload['material_id'],
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                    'material_id' => $material->id,
                     'color_name' => $payload['color_name'],
                     'size_eu' => $payload['size_eu'],
                 ],
-                $payload
+                [
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                    'material_id' => $material->id,
+                    'color_name' => $payload['color_name'],
+                    'size_eu' => $payload['size_eu'],
+                    'unit_price' => $payload['unit_price'],
+                    'pricing_breakdown' => $payload['pricing_breakdown'],
+                    'status' => $payload['status'],
+                ]
             );
         }
     }

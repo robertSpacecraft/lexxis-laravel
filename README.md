@@ -1,3 +1,12 @@
+# Lexxis Backend
+
+Notas operativas minimas:
+
+- Produccion Railway: usar `APP_DEBUG=false`, `APP_URL` con la URL publica del backend y configurar los origenes permitidos para el frontend de Vercel.
+- Frontend Vercel: apuntar la variable de API al backend Railway publico.
+- El almacenamiento local de Railway no es persistente entre redeploys/restarts. Las imagenes y archivos subidos requieren S3, Cloudinary o volumen persistente para produccion.
+- Datos demo locales: ejecutar `php artisan db:seed` solo en entorno local. Los seeders usan datos demo identificables y no hacen truncate de productos.
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

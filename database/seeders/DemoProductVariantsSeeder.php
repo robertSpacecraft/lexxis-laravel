@@ -11,22 +11,76 @@ class DemoProductVariantsSeeder extends Seeder
 {
     public function run(): void
     {
-        $flow = Product::query()->where('slug', 'lexxis-flow')->first();
-        $urban = Product::query()->where('slug', 'lexxis-urban')->first();
+        $products = Product::query()
+            ->whereIn('slug', [
+                'lexxis-future',
+                'lexxis-summer',
+                'lexxis-xport',
+                'lexxis-mocca',
+                'lexxis-flow',
+                'lexxis-urban',
+            ])
+            ->get()
+            ->keyBy('slug');
 
-        $tpu95 = Material::query()->where('slug', 'tpu-flex-95a')->first();
-        $tpu90 = Material::query()->where('slug', 'tpu-comfort-90a')->first();
-        $pla = Material::query()->where('slug', 'pla-display')->first();
+        $materials = Material::query()
+            ->whereIn('slug', [
+                'tpu-flex-95a',
+                'tpu-comfort-90a',
+                'pla-display',
+            ])
+            ->get()
+            ->keyBy('slug');
 
-        if (!$flow || !$urban || !$tpu95 || !$tpu90 || !$pla) {
+        if ($products->isEmpty() || $materials->isEmpty()) {
             $this->command?->warn('Faltan productos o materiales para sembrar variantes demo.');
             return;
         }
 
         $variants = [
             [
-                'product_id' => $flow->id,
-                'material_id' => $tpu95->id,
+                'product_slug' => 'lexxis-future',
+                'material_slug' => 'tpu-flex-95a',
+                'sku' => 'FUTURE-BLK-42-95A',
+                'size_eu' => 42.0,
+                'color_name' => 'Negro',
+                'price' => 124.90,
+                'stock' => 4,
+                'is_active' => true,
+            ],
+            [
+                'product_slug' => 'lexxis-summer',
+                'material_slug' => 'tpu-comfort-90a',
+                'sku' => 'SUMMER-SND-39-90A',
+                'size_eu' => 39.0,
+                'color_name' => 'Arena',
+                'price' => 89.90,
+                'stock' => 6,
+                'is_active' => true,
+            ],
+            [
+                'product_slug' => 'lexxis-xport',
+                'material_slug' => 'tpu-flex-95a',
+                'sku' => 'XPORT-BLU-43-95A',
+                'size_eu' => 43.0,
+                'color_name' => 'Azul',
+                'price' => 114.90,
+                'stock' => 5,
+                'is_active' => true,
+            ],
+            [
+                'product_slug' => 'lexxis-mocca',
+                'material_slug' => 'pla-display',
+                'sku' => 'MOCCA-BRN-41-PLA',
+                'size_eu' => 41.0,
+                'color_name' => 'Mocca',
+                'price' => 99.90,
+                'stock' => 3,
+                'is_active' => true,
+            ],
+            [
+                'product_slug' => 'lexxis-flow',
+                'material_slug' => 'tpu-flex-95a',
                 'sku' => 'FLOW-BLK-42-95A',
                 'size_eu' => 42.0,
                 'color_name' => 'Negro',
@@ -35,8 +89,8 @@ class DemoProductVariantsSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'product_id' => $flow->id,
-                'material_id' => $tpu90->id,
+                'product_slug' => 'lexxis-flow',
+                'material_slug' => 'tpu-comfort-90a',
                 'sku' => 'FLOW-SND-41-90A',
                 'size_eu' => 41.0,
                 'color_name' => 'Arena',
@@ -45,8 +99,8 @@ class DemoProductVariantsSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'product_id' => $urban->id,
-                'material_id' => $tpu95->id,
+                'product_slug' => 'lexxis-urban',
+                'material_slug' => 'tpu-flex-95a',
                 'sku' => 'URBAN-WHT-43-95A',
                 'size_eu' => 43.0,
                 'color_name' => 'Blanco',
@@ -55,8 +109,8 @@ class DemoProductVariantsSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'product_id' => $urban->id,
-                'material_id' => $pla->id,
+                'product_slug' => 'lexxis-urban',
+                'material_slug' => 'pla-display',
                 'sku' => 'URBAN-RED-42-PLA',
                 'size_eu' => 42.0,
                 'color_name' => 'Rojo',
@@ -67,9 +121,23 @@ class DemoProductVariantsSeeder extends Seeder
         ];
 
         foreach ($variants as $payload) {
+            $product = $products->get($payload['product_slug']);
+            $material = $materials->get($payload['material_slug']);
+
+            if (!$product || !$material) {
+                $this->command?->warn("Se omite variante demo {$payload['sku']} por faltar producto o material.");
+                continue;
+            }
+
+            unset($payload['product_slug'], $payload['material_slug']);
+
             ProductVariant::updateOrCreate(
                 ['sku' => $payload['sku']],
-                $payload
+                [
+                    ...$payload,
+                    'product_id' => $product->id,
+                    'material_id' => $material->id,
+                ]
             );
         }
     }

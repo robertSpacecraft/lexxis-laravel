@@ -14,42 +14,88 @@ class DemoAddressesSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::where('email', 'demo@lexxis.test')->firstOrFail();
+        $users = User::query()
+            ->whereIn('email', [
+                'demo@lexxis.test',
+                'maria@lexxis.test',
+                'carlos@lexxis.test',
+                'lucia@lexxis.test',
+            ])
+            ->get()
+            ->keyBy('email');
 
-        // Streets ya existentes (DEV): usamos una de Madrid y otra de Alicante/Alacant si existe
+        if ($users->isEmpty()) {
+            $this->command?->warn('No hay usuarios demo para sembrar direcciones.');
+            return;
+        }
+
         $streetMadrid = Street::whereHas('city', fn ($q) => $q->where('name', 'Madrid'))->first();
         $streetAlicante = Street::whereHas('city', fn ($q) => $q->where('name', 'Alicante/Alacant'))->first();
+        $streetBarcelona = Street::whereHas('city', fn ($q) => $q->where('name', 'Barcelona'))->first();
+        $streetValencia = Street::whereHas('city', fn ($q) => $q->where('name', 'Valencia'))->first();
 
-        // Fallback: si no están esas, usamos cualquier street existente para no romper el seeder
-        $fallbackStreet = Street::query()->firstOrFail();
+        $fallbackStreet = Street::query()->first();
+
+        if (!$fallbackStreet) {
+            $this->command?->warn('No hay calles para sembrar direcciones demo.');
+            return;
+        }
 
         $streetMadrid = $streetMadrid ?? $fallbackStreet;
         $streetAlicante = $streetAlicante ?? $fallbackStreet;
+        $streetBarcelona = $streetBarcelona ?? $fallbackStreet;
+        $streetValencia = $streetValencia ?? $fallbackStreet;
 
-        // SHIPPING
-        Address::updateOrCreate(
-            ['user_id' => $user->id, 'alias' => 'Casa'],
+        $addresses = [
             [
-                'street_id' => $streetMadrid->id,
-                'street_number' => '10',
-                'floor' => '3',
-                'door' => 'B',
-                'address_type' => 'shipping',
-                'contact_phone' => $user->phone,
-            ]
-        );
+                'email' => 'demo@lexxis.test',
+                'items' => [
+                    ['alias' => 'Casa', 'street' => $streetMadrid, 'street_number' => '10', 'floor' => '3', 'door' => 'B', 'address_type' => 'shipping'],
+                    ['alias' => 'Facturación', 'street' => $streetAlicante, 'street_number' => '5', 'floor' => null, 'door' => 'A', 'address_type' => 'billing'],
+                ],
+            ],
+            [
+                'email' => 'maria@lexxis.test',
+                'items' => [
+                    ['alias' => 'Casa María', 'street' => $streetBarcelona, 'street_number' => '22', 'floor' => '1', 'door' => 'C', 'address_type' => 'shipping'],
+                    ['alias' => 'Empresa María', 'street' => $streetMadrid, 'street_number' => '18', 'floor' => '4', 'door' => null, 'address_type' => 'billing'],
+                ],
+            ],
+            [
+                'email' => 'carlos@lexxis.test',
+                'items' => [
+                    ['alias' => 'Casa Carlos', 'street' => $streetValencia, 'street_number' => '7', 'floor' => null, 'door' => 'D', 'address_type' => 'shipping'],
+                    ['alias' => 'Facturación Carlos', 'street' => $streetValencia, 'street_number' => '7', 'floor' => null, 'door' => 'D', 'address_type' => 'billing'],
+                ],
+            ],
+            [
+                'email' => 'lucia@lexxis.test',
+                'items' => [
+                    ['alias' => 'Casa Lucía', 'street' => $streetAlicante, 'street_number' => '14', 'floor' => '2', 'door' => 'A', 'address_type' => 'shipping'],
+                ],
+            ],
+        ];
 
-        // BILLING
-        Address::updateOrCreate(
-            ['user_id' => $user->id, 'alias' => 'Facturación'],
-            [
-                'street_id' => $streetAlicante->id,
-                'street_number' => '5',
-                'floor' => null,
-                'door' => 'A',
-                'address_type' => 'billing',
-                'contact_phone' => $user->phone,
-            ]
-        );
+        foreach ($addresses as $group) {
+            $user = $users->get($group['email']);
+
+            if (!$user) {
+                continue;
+            }
+
+            foreach ($group['items'] as $payload) {
+                Address::updateOrCreate(
+                    ['user_id' => $user->id, 'alias' => $payload['alias']],
+                    [
+                        'street_id' => $payload['street']->id,
+                        'street_number' => $payload['street_number'],
+                        'floor' => $payload['floor'],
+                        'door' => $payload['door'],
+                        'address_type' => $payload['address_type'],
+                        'contact_phone' => $user->phone,
+                    ]
+                );
+            }
+        }
     }
 }
