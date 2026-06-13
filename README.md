@@ -1,68 +1,174 @@
 # Lexxis Backend
 
-Notas operativas minimas:
+Backend Laravel de Lexxis. Expone la API consumida por la SPA de frontend, gestiona el dominio de catálogo y fabricación 3D, y proporciona un panel de administración Blade para operar productos, usuarios, pedidos y trabajos de impresión.
 
-- Produccion Railway: usar `APP_DEBUG=false`, `APP_URL` con la URL publica del backend y configurar los origenes permitidos para el frontend de Vercel.
-- Frontend Vercel: apuntar la variable de API al backend Railway publico.
-- El almacenamiento local de Railway no es persistente entre redeploys/restarts. Las imagenes y archivos subidos requieren S3, Cloudinary o volumen persistente para produccion.
-- Datos demo locales: ejecutar `php artisan db:seed` solo en entorno local. Los seeders usan datos demo identificables y no hacen truncate de productos.
+## Stack verificado
 
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+- Laravel 12.
+- PHP definido en `composer.json` como `^8.2`.
+- Laravel Sanctum para autenticación API con token Bearer y soporte de cookies stateful.
+- MariaDB 11 en Laravel Sail/Docker. El servicio se llama `mysql` por compatibilidad con Sail.
+- Redis, Mailpit, Meilisearch y Selenium están configurados en `compose.yaml`.
+- Blade y Vite para el panel web/admin de Laravel.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Requisitos
 
-## About Laravel
+- PHP y Composer compatibles con las dependencias del proyecto.
+- Node.js y npm para assets Vite del backend Laravel.
+- Docker si se trabaja con Laravel Sail.
+- Base de datos local configurada en `.env`.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Nota: en `compose.yaml` Sail usa el runtime `8.5`. Si se ejecuta fuera de Sail, conviene comprobar la versión real exigida por las dependencias instaladas.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Instalación local
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+npm install
+```
 
-## Learning Laravel
+Con Sail:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Los seeders deben ejecutarse solo en entorno local:
 
-## Laravel Sponsors
+```bash
+./vendor/bin/sail artisan db:seed
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Variables de entorno relevantes
 
-### Premium Partners
+No incluir secretos reales en el repositorio.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- `APP_URL`: URL pública o local del backend.
+- `APP_DEBUG`: debe ser `false` en producción.
+- `FRONTEND_URL`: origen del frontend.
+- `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: conexión de base de datos.
+- `SANCTUM_STATEFUL_DOMAINS`: dominios stateful permitidos por Sanctum.
+- `SESSION_DOMAIN`, `SESSION_SECURE_COOKIE`: configuración de sesión/cookies.
+- `FILESYSTEM_DISK`: disco de almacenamiento usado por Laravel.
 
-## Contributing
+## Comandos habituales
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+npm install
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail artisan db:seed
+./vendor/bin/sail artisan test
+./vendor/bin/sail artisan route:list --path=api
+./vendor/bin/sail artisan route:list --path=admin
+```
 
-## Code of Conduct
+También existe el script Composer:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+composer test
+```
 
-## Security Vulnerabilities
+## Autenticación
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+La API usa Laravel Sanctum. En `routes/api.php` existen endpoints de registro, login tradicional y `POST /api/token-login`.
 
-## License
+El flujo usado por el frontend es `token-login`, que devuelve:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- `token`;
+- `token_type: Bearer`;
+- datos básicos del usuario.
+
+El logout API está protegido por `auth:sanctum` y revoca el token actual cuando es un token persistente de Sanctum. También conserva la limpieza de sesión web si existe sesión.
+
+`token-login` aplica rate limit de 5 intentos por minuto por email e IP.
+
+## Entidades principales
+
+El dominio actual incluye:
+
+- usuarios;
+- direcciones;
+- productos;
+- variantes de producto;
+- imágenes de producto y variantes;
+- materiales;
+- diseños personalizados;
+- archivos imprimibles;
+- análisis de archivos imprimibles;
+- trabajos de impresión;
+- carritos e items de carrito;
+- pedidos e items de pedido;
+- configuración de precios.
+
+## API pública
+
+La API pública incluye catálogo:
+
+- productos;
+- detalle de producto;
+- variantes;
+- opciones de configurador.
+
+La zona autenticada incluye:
+
+- perfil de usuario;
+- archivos 3D;
+- trabajos de impresión;
+- diseños personalizados;
+- carrito;
+- checkout y pedidos.
+
+## Panel de administración
+
+El panel admin está definido en `routes/web.php` bajo `/admin` y protegido por `auth` y middleware `admin`.
+
+Permite gestionar:
+
+- productos;
+- variantes;
+- imágenes;
+- diseños personalizados;
+- materiales;
+- archivos imprimibles;
+- trabajos de impresión;
+- usuarios;
+- direcciones;
+- carritos;
+- pedidos.
+
+El dashboard admin muestra métricas de usuarios, pedidos, ingresos, archivos 3D, trabajos pendientes de revisión, resumen por estado, modelos más vendidos, últimos pedidos y accesos rápidos.
+
+## Seeders demo
+
+Los seeders actuales preparan datos locales de demostración sin hacer truncate de productos:
+
+- usuarios demo y admin demo;
+- direcciones;
+- productos demo limitados a los slugs previstos;
+- variantes;
+- diseños personalizados;
+- archivos y trabajos de impresión demo;
+- pedidos demo;
+- materiales y configuración de precios.
+
+Los productos demo se crean o reutilizan por slug. Las imágenes de producto no dependen de los seeders y deben gestionarse manualmente desde el panel.
+
+## Despliegue y almacenamiento
+
+El proyecto contempla backend en Railway y frontend en Vercel. En producción:
+
+- `APP_DEBUG=false`;
+- `APP_URL` debe apuntar a la URL pública del backend;
+- los dominios/orígenes del frontend deben estar configurados para CORS/Sanctum.
+
+El almacenamiento local de Railway no es persistente entre redeploys o reinicios. Para imágenes y archivos 3D persistentes hace falta S3, Cloudinary o un volumen persistente.
+
+## Limitaciones conocidas
+
+- No se ha verificado integración con una pasarela de pago real. El checkout crea pedidos con `payment_status` y `payment_method`, pero no procesa pagos externos.
+- La persistencia externa de archivos/imágenes queda pendiente de configuración.
